@@ -1,3 +1,140 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Scanner {
-    
-}
+    private final String text;
+    private final List<Token> tokens ;
+    private int lexStart, cur, line;
+
+    public Scanner(String source) {
+        this.text = source;
+        this.tokens = new ArrayList<>();
+        this.lexStart = 0;
+        this.cur = 0;
+        this.line = 1;
+    }
+
+    public List<Token> scanTokens() {
+        while (!atEnd()) {
+            // cur should be 1 more than lexStart for substring call except at init
+            // also allows for lookahead
+            lexStart = cur;
+            scanToken();
+        }
+        tokens.add(new Token(TokenType.EOF, "", null, line));
+        return tokens;
+    }
+
+    private void scanToken() {
+        // save char then advance pointer
+        char c = text.charAt(cur++);
+        // check for symbolic lexemes including Strings
+        switch (c) {
+            // single char
+            case ';': addToken(TokenType.SEMICOLON); break;
+            case '.': addToken(TokenType.DOT); break;
+            case ',': addToken(TokenType.COMMA); break;
+            case '{': addToken(TokenType.LEFT_BRACE); break;
+            case '}': addToken(TokenType.RIGHT_BRACE); break;
+            case '(': addToken(TokenType.LEFT_PAREN); break;
+            case ')': addToken(TokenType.RIGHT_PAREN); break;
+            case '*': addToken(TokenType.STAR); break;
+            case '%': addToken(TokenType.PERCENT); break;
+            case '^': addToken(TokenType.HAT); break;
+
+            // potential doubles
+            case '+': addToken(match('+') ? TokenType.PLUS_PLUS : TokenType.PLUS); break;
+            case '-': addToken(match('-') ? TokenType.MINUS_MINUS : TokenType.MINUS); break;
+            case '=': addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL); break;
+            case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
+            case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
+            case '!': addToken(match('=') ? TokenType.BANG_EQUAL : TokenType.BANG); break;
+            case '/':
+                // if comment, advance up to newline and ignore
+                // else, division
+                if (match('/')) {
+                    while (peek() != '\n' && !atEnd())
+                        cur++;
+                }
+                else addToken(TokenType.SLASH);
+                break;
+
+            // has literal
+            case '"':
+                // ends when '"' or atEnd()
+                while (peek() != '"' && !atEnd()) {
+                    if (peek() == '\n') line++;
+                    cur++;
+                }
+                if (atEnd()) Lox.error(line, "Unterminated string.");
+                // include end quote
+                cur++;
+                // remove quotes for literal arg
+                addToken(TokenType.STRING, text.substring(lexStart+1, cur-1));
+                break;
+
+            // whitespace
+            case ' ': break;
+            case '\t': break;
+            case '\r': break;
+            case '\n': line++; break;
+
+            default:
+                if (isNumber(c)) {
+                    advanceNumbers();
+                    // cur now pointing at non-number
+                    if (!atEnd() && peek() == '.' && isNumber(peekNext()))
+                        advanceNumbers();
+                    addToken(TokenType.NUMBER, Double.parseDouble(text.substring(lexStart, cur)));
+                }
+                else
+                    Lox.error(line, "Unexpected symbol.");
+                break;
+        }
+    }
+
+    private boolean isNumber(char c) {
+        // java uses utf-16 so numbers in ascending order
+        return c >= '0' && c <= '9';
+    }
+
+    // advance while current char is number
+    private void advanceNumbers() {
+        while (isNumber(peek()) && !atEnd())
+            cur++;
+    }
+
+    // for lexemes with no literal like ';'
+    private void addToken(TokenType type) {
+        addToken(type,null);
+    }
+
+    private void addToken(TokenType type, Object literal) {
+        String lexeme = text.substring(lexStart, cur);
+        tokens.add(new Token(type, lexeme, literal, line));
+    }
+
+    // check source text exhaustion
+    private boolean atEnd() {
+        return lexStart >= text.length();
+    }
+
+    // if matching, consumes the current char and advances
+    // else, do nothing
+    private boolean match(char expected) {
+        if (atEnd() || text.charAt(cur) != expected)
+            return false;
+        cur++;
+        return true;
+    }
+
+    // returns the current char
+    // null char used since not number
+    private char peek() {
+        return !atEnd() ? text.charAt(cur) : '\0';
+    }
+
+    private char peekNext() {
+        return !atEnd() ? text.charAt(cur+1) : '\0';
+    }
+}//EOC

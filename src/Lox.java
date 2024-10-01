@@ -4,7 +4,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Scanner;
+import java.util.List;
 
 public class Lox {
     // prob want to access this at some point in other class
