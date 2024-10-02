@@ -83,8 +83,10 @@ public class Scanner {
                 if (isNumber(c)) {
                     advanceNumbers();
                     // cur now pointing at non-number
-                    if (!atEnd() && peek() == '.' && isNumber(peekNext()))
+                    if (peek() == '.' && isNumber(peekNext())) {
+                        cur++; // consume '.'
                         advanceNumbers();
+                    }
                     addToken(TokenType.NUMBER, Double.parseDouble(text.substring(lexStart, cur)));
                 }
                 else
@@ -100,7 +102,7 @@ public class Scanner {
 
     // advance while current char is number
     private void advanceNumbers() {
-        while (isNumber(peek()) && !atEnd())
+        while (isNumber(peek()))
             cur++;
     }
 
@@ -116,7 +118,7 @@ public class Scanner {
 
     // check source text exhaustion
     private boolean atEnd() {
-        return lexStart >= text.length();
+        return cur >= text.length();
     }
 
     // if matching, consumes the current char and advances
@@ -131,10 +133,10 @@ public class Scanner {
     // returns the current char
     // null char used since not number
     private char peek() {
-        return !atEnd() ? text.charAt(cur) : '\0';
+        return atEnd() ? '\0' : text.charAt(cur);
     }
 
     private char peekNext() {
-        return !atEnd() ? text.charAt(cur+1) : '\0';
+        return cur+1 >= text.length() ? '\0' : text.charAt(cur+1);
     }
 }//EOC
