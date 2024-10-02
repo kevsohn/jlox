@@ -1,3 +1,5 @@
+package lox;
+
 enum TokenType {
     SEMICOLON, COMMA, DOT, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
 

@@ -1,3 +1,5 @@
+package lox;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,7 +129,7 @@ public class Scanner {
                     // if not a reserved keyword
                     if (type == null)
                         type = TokenType.IDENTIFIER;
-                    addToken(type, literal);
+                    addToken(type);
                 }else
                     Lox.error(line, "Unexpected symbol.");
                 break;

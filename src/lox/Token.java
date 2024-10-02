@@ -1,3 +1,5 @@
+package lox;
+
 public class Token {
     private final TokenType type;
     private final String lexeme;
