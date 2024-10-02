@@ -1,10 +1,33 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Scanner {
     private final String text;
-    private final List<Token> tokens ;
+    private final List<Token> tokens;
     private int lexStart, cur, line;
+    private static final HashMap<String,TokenType> hmap;
+
+    static {
+        hmap = new HashMap<>();
+        hmap.put("and", TokenType.AND);
+        hmap.put("or", TokenType.OR);
+        hmap.put("true", TokenType.TRUE);
+        hmap.put("false", TokenType.FALSE);
+        hmap.put("if", TokenType.IF);
+        hmap.put("else", TokenType.ELSE);
+        hmap.put("elif", TokenType.ELIF);
+        hmap.put("for", TokenType.FOR);
+        hmap.put("while", TokenType.WHILE);
+        hmap.put("var", TokenType.VAR);
+        hmap.put("class", TokenType.CLASS);
+        hmap.put("fn", TokenType.FN);
+        hmap.put("this", TokenType.THIS);
+        hmap.put("super", TokenType.SUPER);
+        hmap.put("print", TokenType.PRINT);
+        hmap.put("return", TokenType.RETURN);
+        hmap.put("nil", TokenType.NIL);
+    }
 
     public Scanner(String source) {
         this.text = source;
@@ -32,7 +55,14 @@ public class Scanner {
         switch (c) {
             // single char
             case ';': addToken(TokenType.SEMICOLON); break;
-            case '.': addToken(TokenType.DOT); break;
+            case '.':
+                if (isNumber(peek())) {
+                    advanceNumbers();
+                    addToken(TokenType.NUMBER, Double.parseDouble(text.substring(lexStart, cur)));
+                }
+                else
+                    addToken(TokenType.DOT);
+                break;
             case ',': addToken(TokenType.COMMA); break;
             case '{': addToken(TokenType.LEFT_BRACE); break;
             case '}': addToken(TokenType.RIGHT_BRACE); break;
@@ -88,11 +118,24 @@ public class Scanner {
                         advanceNumbers();
                     }
                     addToken(TokenType.NUMBER, Double.parseDouble(text.substring(lexStart, cur)));
-                }
-                else
+                }else if (isAlpha(c)) {
+                    while (isAlpha(peek()) || isNumber(peek()))
+                        cur++;
+                    // "max munch": always take the longest lexeme (---a => -- -a NOT - --a)
+                    String literal = text.substring(lexStart, cur);
+                    TokenType type = hmap.get(literal);
+                    // if not a reserved keyword
+                    if (type == null)
+                        type = TokenType.IDENTIFIER;
+                    addToken(type, literal);
+                }else
                     Lox.error(line, "Unexpected symbol.");
                 break;
         }
+    }
+
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
     }
 
     private boolean isNumber(char c) {
