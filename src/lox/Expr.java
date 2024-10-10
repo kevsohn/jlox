@@ -2,6 +2,11 @@ package lox;
 
 import java.util.List;
 
+// unary -> operator unary
+// binary -> binary (operator unary)
+// group -> "(" expr ")"
+// operator -> "==" | "!=" | ">=" | "<=" | "+=" | "-="
+// literal -> NUMBER | STRING | Nil | Boolean
 abstract class Expr {
     interface Visitor<R> {
         R visitBinary(Expr.Binary expr);

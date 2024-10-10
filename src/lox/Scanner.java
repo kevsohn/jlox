@@ -75,8 +75,32 @@ public class Scanner {
             case '^': addToken(TokenType.HAT); break;
 
             // potential doubles
-            case '+': addToken(match('+') ? TokenType.PLUS_PLUS : TokenType.PLUS); break;
-            case '-': addToken(match('-') ? TokenType.MINUS_MINUS : TokenType.MINUS); break;
+            case '+':
+                if (peek() == '+') {
+                    cur++;
+                    addToken(TokenType.PLUS_PLUS);
+                    break;
+                }
+                else if (peek() == '=') {
+                    cur++;
+                    addToken(TokenType.PLUS_EQUAL);
+                    break;
+                }
+                addToken(TokenType.PLUS);
+                break;
+            case '-':
+                if (peek() == '-') {
+                    cur++;
+                    addToken(TokenType.MINUS_MINUS);
+                    break;
+                }
+                else if (peek() == '=') {
+                    cur++;
+                    addToken(TokenType.MINUS_EQUAL);
+                    break;
+                }
+                addToken(TokenType.MINUS);
+                break;
             case '=': addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL); break;
             case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
             case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
