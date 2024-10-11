@@ -1,24 +1,23 @@
 package lox;
 
-public class AstPrinter implements Expr.Visitor<String> {
-
+public class AstPrinterRPN implements Expr.Visitor<String> {
     public String print(Expr expr) {
         return expr.accept(this);
     }
 
     @Override
     public String visitUnary(Expr.Unary expr) {
-        return parenthesize(expr.op.lexeme, expr.right);
+        return RPN(expr.op.lexeme, expr.right);
     }
 
     @Override
     public String visitBinary(Expr.Binary expr) {
-        return parenthesize(expr.op.lexeme, expr.left, expr.right);
+        return RPN(expr.op.lexeme, expr.left, expr.right);
     }
 
     @Override
     public String visitGroup(Expr.Group expr) {
-        return parenthesize("group", expr.expr);
+        return RPN("group", expr.expr);
     }
 
     @Override
@@ -27,36 +26,22 @@ public class AstPrinter implements Expr.Visitor<String> {
         return expr.val.toString();
     }
 
-    private String parenthesize(String name, Expr... exprs) {
+    // (1 + 2) * (4 - 3) -> 1 2 + 4 3 - *
+    // really simple once already parsed with AST since
+    // the operator precedence is baked into the input construction
+    // just change the operator print to be last
+    private String RPN(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
-        builder.append("(").append(name);
         for (Expr expr : exprs) {
-            builder.append(" ");
             builder.append(expr.accept(this));
+            //builder.append(" ");
         }
-        builder.append(")");
+        if (!name.equals("group"))
+            builder.append(name);
         return builder.toString();
     }
 
     public static void main(String[] args) {
-        /*Expr expr = new Expr.Binary(
-                new Expr.Unary(
-                        new Token(TokenType.MINUS,"-",null,1),
-                        new Expr.Literal(123.45)),
-                new Token(TokenType.STAR, "*", null, 1),
-                new Expr.Group(
-                        new Expr.Binary(
-                                new Expr.Literal(1),
-                                new Token(TokenType.PLUS,"+",null,1),
-                                new Expr.Binary(
-                                        new Expr.Literal(1),
-                                        new Token(TokenType.STAR,"/",null,1),
-                                        new Expr.Literal(null)
-                                )
-                        )
-
-                )
-        );*/
         Expr expr = new Expr.Binary(
                 new Expr.Group(
                         new Expr.Binary(
@@ -71,6 +56,6 @@ public class AstPrinter implements Expr.Visitor<String> {
                                 new Token(TokenType.MINUS,"-",null,1),
                                 new Expr.Literal(3)))
         );
-        System.out.println(new AstPrinter().print(expr));
+        System.out.println(new AstPrinterRPN().print(expr));
     }
 }
