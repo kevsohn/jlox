@@ -98,7 +98,7 @@ public class ParserRPN {
         return tokens.get(cur).type == TokenType.EOF;
     }
 
-    // !!! no need to peek for shunting algo b/c it's LR(0) !!!
+    // !!! no need to peek for shunting algo b/c it's LR(1) !!!
     // don't need to make new Token cuz fields are final
     // .get() passes by reference
     /*
