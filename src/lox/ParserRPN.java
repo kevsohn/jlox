@@ -4,8 +4,13 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.HashMap;
+import static lox.TokenType.*;
 
-// Reverse Polish Notation cant handle unary operators
+// Reverse Polish Notation cant handle operators with
+// more than 1 assigned role, which is why the "-" op
+// being both binary and unary doesn't work for RPN,
+// since it changes operation depending on context.
+// Context-free
 public class ParserRPN {
     private final List<Token> tokens;
     private final Stack<Token> ops = new Stack<>();
@@ -21,17 +26,17 @@ public class ParserRPN {
     // group: (, )
     static {
         hmap = new HashMap<>();
-        hmap.put(TokenType.EQUAL_EQUAL, 0);
-        hmap.put(TokenType.BANG_EQUAL, 0);
-        hmap.put(TokenType.GREATER_EQUAL, 1);
-        hmap.put(TokenType.LESS_EQUAL, 1);
-        hmap.put(TokenType.GREATER, 1);
-        hmap.put(TokenType.LESS, 1);
-        hmap.put(TokenType.PLUS, 2);
-        hmap.put(TokenType.MINUS, 2);
-        hmap.put(TokenType.STAR, 3);
-        hmap.put(TokenType.SLASH, 3);
-        hmap.put(TokenType.RIGHT_PAREN, 4);
+        hmap.put(EQUAL_EQUAL, 0);
+        hmap.put(BANG_EQUAL, 0);
+        hmap.put(GREATER_EQUAL, 1);
+        hmap.put(LESS_EQUAL, 1);
+        hmap.put(GREATER, 1);
+        hmap.put(LESS, 1);
+        hmap.put(PLUS, 2);
+        hmap.put(MINUS, 2);
+        hmap.put(STAR, 3);
+        hmap.put(SLASH, 3);
+        hmap.put(RIGHT_PAREN, 4);
         //hmap.put(TokenType.BANG, 4);
         //hmap.put(TokenType.MINUS, 4); // RPN can't handle unary?
     }
@@ -47,13 +52,13 @@ public class ParserRPN {
         while (!atEOF()) {
             Token t = tokens.get(cur++);
             // highest precedence to lowest
-            if (t.type == TokenType.NUMBER)
+            if (t.type == NUMBER)
                 output.add(t);
             else if (isOperator(t)) {
-                if (t.type == TokenType.LEFT_PAREN)
-                    ops.push(new Token(TokenType.RIGHT_PAREN,")",null,t.line));
-                else if (t.type == TokenType.RIGHT_PAREN) {
-                    while (!ops.empty() && ops.peek().type != TokenType.RIGHT_PAREN)
+                if (t.type == LEFT_PAREN)
+                    ops.push(new Token(RIGHT_PAREN,")",null,t.line));
+                else if (t.type == RIGHT_PAREN) {
+                    while (!ops.empty() && ops.peek().type != RIGHT_PAREN)
                         output.add(ops.pop());
                     if (ops.empty()) {
                         Lox.error(t.line,"Unmatched parenthesis.");
@@ -68,7 +73,7 @@ public class ParserRPN {
                     ops.push(t);
                 else {
                     // go until cur becomes highest precedence except parenthesis
-                    while (!ops.empty() && ops.peek().type != TokenType.RIGHT_PAREN &&
+                    while (!ops.empty() && ops.peek().type != RIGHT_PAREN &&
                             hmap.get(t.type) <= hmap.get(ops.peek().type)) {
                         output.add(ops.pop());
                     }
@@ -95,7 +100,7 @@ public class ParserRPN {
     }
 
     private Boolean atEOF() {
-        return tokens.get(cur).type == TokenType.EOF;
+        return tokens.get(cur).type == EOF;
     }
 
     // !!! no need to peek for shunting algo b/c it's LR(1) !!!
