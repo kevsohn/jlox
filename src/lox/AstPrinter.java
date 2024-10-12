@@ -27,6 +27,8 @@ public class AstPrinter implements Expr.Visitor<String> {
         return expr.val.toString();
     }
 
+    // StringBuilder is faster than concat with "+" if in loop
+    // the "+" operator generates a StringBuilder at each loop iteration, so slow
     private String parenthesize(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         builder.append("(").append(name);
