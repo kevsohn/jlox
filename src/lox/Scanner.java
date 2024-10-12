@@ -122,7 +122,8 @@ public class Scanner {
                     if (peek() == '\n') line++;
                     cur++;
                 }
-                if (atEnd()) Lox.error(line, "Unterminated string.");
+                if (atEnd())
+                    Lox.error(line, "Unterminated string.");
                 // include end quote
                 cur++;
                 // remove quotes for literal arg

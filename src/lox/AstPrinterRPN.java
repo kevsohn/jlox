@@ -42,19 +42,32 @@ public class AstPrinterRPN implements Expr.Visitor<String> {
     }
 
     public static void main(String[] args) {
+        /*System.out.println("(1 + 2) * (4 - 3)");
         Expr expr = new Expr.Binary(
                 new Expr.Group(
                         new Expr.Binary(
                                 new Expr.Literal(1),
                                 new Token(TokenType.PLUS,"+",null,1),
-                                new Expr.Literal(2))
-                ),
+                                new Expr.Literal(2))),
                 new Token(TokenType.STAR,"*",null,1),
                 new Expr.Group(
                         new Expr.Binary(
                                 new Expr.Literal(4),
                                 new Token(TokenType.MINUS,"-",null,1),
                                 new Expr.Literal(3)))
+        );*/
+        // RPN cant do unary well?
+        System.out.println("(1 - 2) == -1");
+        Expr expr = new Expr.Binary(
+                new Expr.Group(
+                        new Expr.Binary(
+                                new Expr.Literal(1),
+                                new Token(TokenType.MINUS,"-",null,1),
+                                new Expr.Literal(2))),
+                new Token(TokenType.EQUAL_EQUAL,"==",null,1),
+                new Expr.Unary(
+                        new Token(TokenType.MINUS,"-",null,1),
+                        new Expr.Literal(1))
         );
         System.out.println(new AstPrinterRPN().print(expr));
     }

@@ -44,9 +44,17 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-        for (Token t: tokens) {
+        /*for (Token t: tokens) {
             System.out.println(t.toString());
+        }*/
+
+        ParserRPN parser = new ParserRPN(tokens);
+        List<Token> output = parser.parseTokens();
+        System.out.print("RPN: ");
+        for (Token t: output) {
+            System.out.print(t.lexeme+" ");
         }
+        System.out.println();
     }
 
     public static void error(int line, String message) {
