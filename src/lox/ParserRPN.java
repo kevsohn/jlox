@@ -61,7 +61,7 @@ public class ParserRPN {
                     while (!ops.empty() && ops.peek().type != RIGHT_PAREN)
                         output.add(ops.pop());
                     if (ops.empty()) {
-                        Lox.error(t.line,"Unmatched parenthesis.");
+                        Lox.error(t,"Unmatched parenthesis.");
                         // to avoid popping empty
                         break;
                     }
@@ -81,7 +81,7 @@ public class ParserRPN {
                 }
             }
             else {
-                Lox.error(t.line, "Token unsupported by parser.");
+                Lox.error(t, "Token unsupported by parser.");
             }
         }
 

@@ -156,7 +156,7 @@ public class Scanner {
                         type = TokenType.IDENTIFIER;
                     addToken(type);
                 }else
-                    Lox.error(line, "Unexpected symbol.");
+                    Lox.error(line, "Unexpected character.");
                 break;
         }
     }

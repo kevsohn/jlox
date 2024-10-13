@@ -13,6 +13,10 @@ import static lox.TokenType.*;
 // unary -> (( '!' | '-' ) unary) | primary
 // primary -> '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
+    private static class ParseError extends RuntimeException {
+
+    }
+
     private final List<Token> tokens;
     private int cur = 0;
 
@@ -20,8 +24,13 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public Expr parseTokens() {
-        return expression();
+    public Expr parse() {
+        try {
+            return expression();
+        }
+        catch (ParseError error) {
+            return null;
+        }
     }
 
     private Expr expression() {
@@ -81,6 +90,7 @@ public class Parser {
     }
 
     private Expr unary() {
+        // recurse unary until it hits primary basecase
         if (match(BANG, MINUS)) {
             Token op = prev();
             Expr right = unary();
@@ -94,14 +104,27 @@ public class Parser {
         if (match(NUMBER, STRING, NIL)) return new Expr.Literal(prev().literal);
         else if (match(TRUE)) return new Expr.Literal(true);
         else if (match(FALSE)) return new Expr.Literal(false);
-        //if (match(LEFT_PAREN)) {
-        cur++;
+        else if (match(LEFT_PAREN)) {
             Expr expr = expression();
-            cur++;
-            //consume(RIGHT_PAREN, "Expect ')' after expression.");
+            consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Group(expr);
-        //}
-        //return;
+        }
+        throw error(peek(),"Expect expression.");
+    }
+
+    private ParseError error(Token token, String message) {
+        Lox.error(token, message);
+        return new ParseError();
+    }
+
+    private void consume(TokenType type, String message) {
+        if (check(type)) cur++;
+        throw error(peek(), message);
+    }
+
+    private Token advance() {
+        if (!atEnd()) cur++;
+        return prev();
     }
 
     // returns true if matches any of the given types and advances
