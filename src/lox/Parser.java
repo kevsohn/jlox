@@ -1,7 +1,6 @@
 package lox;
 
 import java.util.List;
-import java.util.TreeMap;
 
 import static lox.TokenType.*;
 
@@ -82,23 +81,27 @@ public class Parser {
     }
 
     private Expr unary() {
-        Expr expr;
         while (match(BANG, MINUS)) {
             Token op = prev();
             Expr right = unary();
-            right = new Expr.Unary(op, right);
+            return new Expr.Unary(op, right);
         }
-        return right;
+        return primary();
     }
 
     private Expr primary() {
-        if (match(LEFT_PAREN)) {
-            Expr expr = expression();
-            cur++; // consume right paren
-            return expr;
-        }
+        // nil, true, and false have "null" in its literal field
+        if (match(NUMBER, STRING, NIL)) return new Expr.Literal(prev().literal);
+        else if (match(TRUE)) return new Expr.Literal(true);
+        else if (match(FALSE)) return new Expr.Literal(false);
+        //if (match(LEFT_PAREN)) {
         cur++;
-        return new Expr.Literal(prev().literal);
+            Expr expr = expression();
+            cur++;
+            //consume(RIGHT_PAREN, "Expect ')' after expression.");
+            return new Expr.Group(expr);
+        //}
+        //return;
     }
 
     // returns true if matches any of the given types and advances

@@ -1,40 +1,16 @@
 package lox;
 
-public class AstPrinterRPN implements Expr.Visitor<String> {
-    public String print(Expr expr) {
-        return expr.accept(this);
-    }
-
-    @Override
-    public String visitUnary(Expr.Unary expr) {
-        return RPN(expr.op.lexeme, expr.right);
-    }
-
-    @Override
-    public String visitBinary(Expr.Binary expr) {
-        return RPN(expr.op.lexeme, expr.left, expr.right);
-    }
-
-    @Override
-    public String visitGroup(Expr.Group expr) {
-        return RPN("group", expr.expr);
-    }
-
-    @Override
-    public String visitLiteral(Expr.Literal expr) {
-        if (expr.val == null) return "nil";
-        return expr.val.toString();
-    }
-
+public class AstPrinterRPN extends AstPrinter {
     // (1 + 2) * (4 - 3) -> 1 2 + 4 3 - *
     // really simple once already parsed with AST since
     // the operator precedence is baked into the input construction
     // just change the operator print to be last
-    private String RPN(String name, Expr... exprs) {
+    @Override
+    public String format(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         for (Expr expr : exprs) {
             builder.append(expr.accept(this));
-            //builder.append(" ");
+            builder.append(" ");
         }
         if (!name.equals("group"))
             builder.append(name);

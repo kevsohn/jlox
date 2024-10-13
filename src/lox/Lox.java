@@ -44,17 +44,23 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-        /*for (Token t: tokens) {
-            System.out.println(t.toString());
-        }*/
+        System.out.print("tokens: ");
+        for (Token t: tokens)
+            System.out.print(t.lexeme+" ");
+        System.out.println();
 
-        ParserRPN parser = new ParserRPN(tokens);
+        /*ParserRPN parser = new ParserRPN(tokens);
         List<Token> output = parser.parseTokens();
         System.out.print("RPN: ");
         for (Token t: output) {
             System.out.print(t.lexeme+" ");
         }
-        System.out.println();
+        System.out.println();*/
+
+        Parser parser = new Parser(tokens);
+        Expr expr = parser.parseTokens();
+        AstPrinter printer = new AstPrinterRPN();
+        System.out.println(printer.print(expr));
     }
 
     public static void error(int line, String message) {

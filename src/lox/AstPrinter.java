@@ -8,17 +8,17 @@ public class AstPrinter implements Expr.Visitor<String> {
 
     @Override
     public String visitUnary(Expr.Unary expr) {
-        return parenthesize(expr.op.lexeme, expr.right);
+        return format(expr.op.lexeme, expr.right);
     }
 
     @Override
     public String visitBinary(Expr.Binary expr) {
-        return parenthesize(expr.op.lexeme, expr.left, expr.right);
+        return format(expr.op.lexeme, expr.left, expr.right);
     }
 
     @Override
     public String visitGroup(Expr.Group expr) {
-        return parenthesize("group", expr.expr);
+        return format("group", expr.expr);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class AstPrinter implements Expr.Visitor<String> {
 
     // StringBuilder is faster than concat with "+" if in loop
     // the "+" operator generates a StringBuilder at each loop iteration, so slow
-    private String parenthesize(String name, Expr... exprs) {
+    public String format(String name, Expr... exprs) {
         StringBuilder builder = new StringBuilder();
         builder.append("(").append(name);
         for (Expr expr : exprs) {
