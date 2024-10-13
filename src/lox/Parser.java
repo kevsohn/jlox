@@ -29,7 +29,7 @@ public class Parser {
         try {
             return expression();
         }catch (ParseError error) {
-            return null;
+            return null; // right now, panic mode
         }
     }
 
@@ -124,7 +124,7 @@ public class Parser {
 
     // method doesn't throw error itself for control over error report.
     // throwing is done by the terminal production and caught higher up
-    // to sync parser
+    // while unwinding to the correct nonterminal to aid in syncing parser
     private ParseError error(Token token, String message) {
         Lox.error(token, message);
         return new ParseError();
