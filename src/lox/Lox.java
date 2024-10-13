@@ -59,7 +59,7 @@ public class Lox {
 
         Parser parser = new Parser(tokens);
         Expr expr = parser.parseTokens();
-        AstPrinter printer = new AstPrinterRPN();
+        AstPrinter printer = new AstPrinter();
         System.out.println(printer.print(expr));
     }
 

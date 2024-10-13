@@ -81,7 +81,7 @@ public class Parser {
     }
 
     private Expr unary() {
-        while (match(BANG, MINUS)) {
+        if (match(BANG, MINUS)) {
             Token op = prev();
             Expr right = unary();
             return new Expr.Unary(op, right);
