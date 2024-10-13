@@ -66,12 +66,12 @@ public class Scanner {
                     addToken(TokenType.DOT);
                 break;
             case ',': addToken(TokenType.COMMA); break;
-            case '{': addToken(TokenType.LEFT_BRACE); break;
-            case '}': addToken(TokenType.RIGHT_BRACE); break;
-            case '(': addToken(TokenType.LEFT_PAREN); break;
-            case ')': addToken(TokenType.RIGHT_PAREN); break;
+            case '{': addToken(TokenType.L_BRACE); break;
+            case '}': addToken(TokenType.R_BRACE); break;
+            case '(': addToken(TokenType.L_PAREN); break;
+            case ')': addToken(TokenType.R_PAREN); break;
             case '*': addToken(TokenType.STAR); break;
-            case '%': addToken(TokenType.PERCENT); break;
+            case '%': addToken(TokenType.MOD); break;
             case '^': addToken(TokenType.HAT); break;
 
             // potential doubles
@@ -83,7 +83,7 @@ public class Scanner {
                 }
                 else if (peek() == '=') {
                     cur++;
-                    addToken(TokenType.PLUS_EQUAL);
+                    addToken(TokenType.PLUS_EQ);
                     break;
                 }
                 addToken(TokenType.PLUS);
@@ -96,15 +96,15 @@ public class Scanner {
                 }
                 else if (peek() == '=') {
                     cur++;
-                    addToken(TokenType.MINUS_EQUAL);
+                    addToken(TokenType.MINUS_EQ);
                     break;
                 }
                 addToken(TokenType.MINUS);
                 break;
-            case '=': addToken(match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL); break;
-            case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER); break;
-            case '<': addToken(match('=') ? TokenType.LESS_EQUAL : TokenType.LESS); break;
-            case '!': addToken(match('=') ? TokenType.BANG_EQUAL : TokenType.BANG); break;
+            case '=': addToken(match('=') ? TokenType.EQ_EQ : TokenType.EQ); break;
+            case '>': addToken(match('=') ? TokenType.GREATER_EQ : TokenType.GREATER); break;
+            case '<': addToken(match('=') ? TokenType.LESS_EQ : TokenType.LESS); break;
+            case '!': addToken(match('=') ? TokenType.BANG_EQ : TokenType.BANG); break;
             case '/':
                 // if comment, advance up to newline and ignore
                 // else, division

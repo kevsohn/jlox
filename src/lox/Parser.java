@@ -9,7 +9,8 @@ import static lox.TokenType.*;
 // equality -> comparison (( '==' | '!=' ) comparison)*
 // comparison -> term (( '>' | '>=' | '<=' | '<' ) term)*
 // term -> factor (( '+' | '-' ) factor)*
-// factor -> unary (( '*' | '/' ) unary)*
+// factor -> exponent (( '*' | '/' | '%' ) exponent)*
+// exponent -> unary (( '*' | '/' | '%' ) unary)*
 // unary -> (( '!' | '-' ) unary) | primary
 // primary -> '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
@@ -50,7 +51,7 @@ public class Parser {
         // reduces to true == 1.
         // is it b/c Lox typechecks at runtime or it's just not the parser's job.
         // do all 1st-pass compilers do this?
-        while (match(EQUAL_EQUAL, BANG_EQUAL)) {
+        while (match(EQ_EQ, BANG_EQ)) {
             // save token before calling b/c "cur" is global var
             Token op = prev();
             Expr right = comparison();
@@ -61,7 +62,7 @@ public class Parser {
 
     private Expr comparison() {
         Expr left = term();
-        while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+        while (match(GREATER, GREATER_EQ, LESS, LESS_EQ)) {
             Token op = prev();
             Expr right = term();
             left = new Expr.Binary(left, op, right);
@@ -80,8 +81,18 @@ public class Parser {
     }
 
     private Expr factor() {
+        Expr left = exponent();
+        while (match(STAR, SLASH, MOD)) {
+            Token op = prev();
+            Expr right = exponent();
+            left = new Expr.Binary(left, op, right);
+        }
+        return left;
+    }
+
+    private Expr exponent() {
         Expr left = unary();
-        while (match(STAR, SLASH)) {
+        while (match(HAT)) {
             Token op = prev();
             Expr right = unary();
             left = new Expr.Binary(left, op, right);
@@ -104,12 +115,20 @@ public class Parser {
         if (match(NUMBER, STRING, NIL)) return new Expr.Literal(prev().literal);
         else if (match(TRUE)) return new Expr.Literal(true);
         else if (match(FALSE)) return new Expr.Literal(false);
-        else if (match(LEFT_PAREN)) {
+        else if (match(L_PAREN)) {
             Expr expr = expression();
-            consume(RIGHT_PAREN, "Expect ')' after expression.");
+            consume(R_PAREN, "Expect ')' after expression.");
             return new Expr.Group(expr);
         }
         throw error(peek(),"Expect expression.");
+    }
+
+    private void consume(TokenType type, String message) {
+        if (check(type)) {
+            cur++;
+            return;
+        }
+        throw error(peek(), message);
     }
 
     private ParseError error(Token token, String message) {
@@ -117,9 +136,8 @@ public class Parser {
         return new ParseError();
     }
 
-    private void consume(TokenType type, String message) {
-        if (check(type)) cur++;
-        throw error(peek(), message);
+    private void synchronize() {
+
     }
 
     // returns true if matches any of the given types and advances

@@ -26,17 +26,17 @@ public class ParserRPN {
     // group: (, )
     static {
         hmap = new HashMap<>();
-        hmap.put(EQUAL_EQUAL, 0);
-        hmap.put(BANG_EQUAL, 0);
-        hmap.put(GREATER_EQUAL, 1);
-        hmap.put(LESS_EQUAL, 1);
+        hmap.put(EQ_EQ, 0);
+        hmap.put(BANG_EQ, 0);
+        hmap.put(GREATER_EQ, 1);
+        hmap.put(LESS_EQ, 1);
         hmap.put(GREATER, 1);
         hmap.put(LESS, 1);
         hmap.put(PLUS, 2);
         hmap.put(MINUS, 2);
         hmap.put(STAR, 3);
         hmap.put(SLASH, 3);
-        hmap.put(RIGHT_PAREN, 4);
+        hmap.put(R_PAREN, 4);
         //hmap.put(TokenType.BANG, 4);
         //hmap.put(TokenType.MINUS, 4); // RPN can't handle unary?
     }
@@ -55,10 +55,10 @@ public class ParserRPN {
             if (t.type == NUMBER)
                 output.add(t);
             else if (isOperator(t)) {
-                if (t.type == LEFT_PAREN)
-                    ops.push(new Token(RIGHT_PAREN,")",null,t.line));
-                else if (t.type == RIGHT_PAREN) {
-                    while (!ops.empty() && ops.peek().type != RIGHT_PAREN)
+                if (t.type == L_PAREN)
+                    ops.push(new Token(R_PAREN,")",null,t.line));
+                else if (t.type == R_PAREN) {
+                    while (!ops.empty() && ops.peek().type != R_PAREN)
                         output.add(ops.pop());
                     if (ops.empty()) {
                         Lox.error(t,"Unmatched parenthesis.");
@@ -73,7 +73,7 @@ public class ParserRPN {
                     ops.push(t);
                 else {
                     // go until cur becomes highest precedence except parenthesis
-                    while (!ops.empty() && ops.peek().type != RIGHT_PAREN &&
+                    while (!ops.empty() && ops.peek().type != R_PAREN &&
                             hmap.get(t.type) <= hmap.get(ops.peek().type)) {
                         output.add(ops.pop());
                     }
@@ -92,8 +92,8 @@ public class ParserRPN {
 
     private Boolean isOperator(Token token) {
         return switch (token.type) {
-            case LEFT_PAREN, RIGHT_PAREN, PLUS, MINUS, STAR, SLASH,
-                 GREATER, LESS, GREATER_EQUAL, LESS_EQUAL, EQUAL_EQUAL, BANG_EQUAL
+            case L_PAREN, R_PAREN, PLUS, MINUS, STAR, SLASH,
+                 GREATER, LESS, GREATER_EQ, LESS_EQ, EQ_EQ, BANG_EQ
                     -> true;
             default -> false;
         };

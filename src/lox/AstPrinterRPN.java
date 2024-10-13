@@ -40,7 +40,7 @@ public class AstPrinterRPN extends AstPrinter {
                                 new Expr.Literal(1),
                                 new Token(TokenType.MINUS,"-",null,1),
                                 new Expr.Literal(2))),
-                new Token(TokenType.EQUAL_EQUAL,"==",null,1),
+                new Token(TokenType.EQ_EQ,"==",null,1),
                 new Expr.Unary(
                         new Token(TokenType.MINUS,"-",null,1),
                         new Expr.Literal(1))

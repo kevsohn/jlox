@@ -59,6 +59,7 @@ public class Lox {
 
         Parser parser = new Parser(tokens);
         Expr expr = parser.parse();
+        if (hadError) return;
         System.out.println(new AstPrinter().print(expr));
     }
 
