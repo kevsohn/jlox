@@ -28,8 +28,7 @@ public class Parser {
     public Expr parse() {
         try {
             return expression();
-        }
-        catch (ParseError error) {
+        }catch (ParseError error) {
             return null;
         }
     }
@@ -123,21 +122,41 @@ public class Parser {
         throw error(peek(),"Expect expression.");
     }
 
-    private void consume(TokenType type, String message) {
-        if (check(type)) {
-            cur++;
-            return;
-        }
-        throw error(peek(), message);
-    }
-
+    // method doesn't throw error itself for control over error report.
+    // throwing is done by the terminal production and caught higher up
+    // to sync parser
     private ParseError error(Token token, String message) {
         Lox.error(token, message);
         return new ParseError();
     }
 
-    private void synchronize() {
+    // discard tokens until after end of statement is found
+    private void sync() {
+        advance();
+        while (!atEnd()) {
+            if (prev().type == SEMICOLON) return;
+            // statements usually start with these keywords
+            switch (peek().type) {
+                case CLASS, FOR, FN, IF, PRINT, RETURN, VAR, WHILE:
+                    return;
+            }
+            advance();
+        }
+    }
 
+    // since atEnd() is only sensitive to cur == EOF,
+    // need to care about advancing past it
+    private void advance() {
+        if (!atEnd()) cur++;
+    }
+
+    // not sure if this needs to be a method
+    private void consume(TokenType type, String message) {
+        if (check(type)) {
+            advance();
+            return;
+        }
+        throw error(peek(), message);
     }
 
     // returns true if matches any of the given types and advances
@@ -145,7 +164,7 @@ public class Parser {
     private Boolean match(TokenType... types) {
         for (TokenType type: types) {
             if (check(type)) {
-                cur++;
+                advance();
                 return true;
             }
         }
