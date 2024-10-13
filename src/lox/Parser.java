@@ -122,11 +122,6 @@ public class Parser {
         throw error(peek(), message);
     }
 
-    private Token advance() {
-        if (!atEnd()) cur++;
-        return prev();
-    }
-
     // returns true if matches any of the given types and advances
     // could also just use if-statements in each func
     private Boolean match(TokenType... types) {
