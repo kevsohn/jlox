@@ -30,9 +30,9 @@ public class Interpreter implements Expr.Visitor<Object> {
     private String stringify(Object obj) {
         if (obj == null) return "nil";
         else if (obj instanceof Double) {
-            String text = obj.toString();
-            if (text.endsWith(".0"))
-                return text.substring(0, text.length()-2);
+            String num = obj.toString();
+            if (num.endsWith(".0"))
+                return num.substring(0, num.length()-2);
         }
         return obj.toString();
     }
@@ -48,52 +48,57 @@ public class Interpreter implements Expr.Visitor<Object> {
     }
 
     public Object visitBinary(Expr.Binary expr) {
+        // left associative so order matters!
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
         return switch (expr.op.type) {
             case PLUS -> {
                 if (left instanceof Double && right instanceof Double)
-                    yield (Double)left + (Double)right;
+                    yield (double)left + (double)right;
                 else if (left instanceof String && right instanceof String)
                     yield (String)left + (String)right;
+                else if (left instanceof String && right instanceof Double)
+                    yield (String)left + (double)right;
+                else if (left instanceof Double && right instanceof String)
+                    yield (double)left + (String)right;
                 else
                     throw new RuntimeError(expr.op,"Operands must be two numbers or two strings.");
             }
             case MINUS -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left - (Double)right;
+                yield (double)left - (double)right;
             }
             case STAR -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left * (Double)right;
+                yield (double)left * (double)right;
             }
             case SLASH -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left / (Double)right;
+                yield (double)left / (double)right;
             }
             case MOD -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left % (Double)right;
+                yield (double)left % (double)right;
             }
             case HAT -> {
                 checkNumberOperand(left, expr.op, right);
-                yield Math.pow((Double)left, (Double)right);
+                yield Math.pow((double)left, (double)right);
             }
             case GREATER -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left > (Double)right;
+                yield (double)left > (double)right;
             }
             case GREATER_EQ -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left >= (Double)right;
+                yield (double)left >= (double)right;
             }
             case LESS -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left < (Double)right;
+                yield (double)left < (double)right;
             }
             case LESS_EQ -> {
                 checkNumberOperand(left, expr.op, right);
-                yield (Double)left <= (Double)right;
+                yield (double)left <= (double)right;
             }
             case EQ_EQ -> isEqual(left,right);
             case BANG_EQ -> !isEqual(left,right);
