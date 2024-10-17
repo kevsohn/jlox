@@ -60,11 +60,10 @@ public class Lox {
         System.out.println();*/
 
         Parser parser = new Parser(tokens);
-        Expr expr = parser.parse();
+        List<Stmt> stmts = parser.parse();
         if (hadError) return;
-        System.out.println("parser: "+new AstPrinter().print(expr));
-
-        interpreter.interpret(expr);
+        //System.out.println("parser: "+new AstPrinter().print(expr));
+        interpreter.interpret(stmts);
     }
 
     static void runtimeError(RuntimeError e) {
@@ -74,9 +73,9 @@ public class Lox {
 
     static void error(Token token, String message) {
         if (token.type == TokenType.EOF)
-            report(token.line,"at end ",message);
+            report(token.line,"at end",message);
         else
-            report(token.line, "at '"+token.lexeme+"' ", message);
+            report(token.line, "at '"+token.lexeme+"'", message);
     }
 
     static void error(int line, String message) {

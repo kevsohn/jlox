@@ -1,30 +1,25 @@
 package lox;
 
+import java.util.List;
+
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
-    public void interpret(Expr expr) {
+    public void interpret(List<Stmt> statements) {
         try {
-            Object val = evaluate(expr);
-            System.out.println(stringify(val));
+            for (Stmt stmt : statements) {
+                execute(stmt);
+            }
         }catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
     }
 
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
     private Object evaluate(Expr expr) {
         return expr.accept(this);
-    }
-
-    private boolean isTruthy(Object obj) {
-        if (obj == null) return false;
-        else if (obj instanceof Boolean) return (Boolean)obj;
-        return true;
-    }
-
-    private boolean isEqual(Object a, Object b) {
-        if (a == null && b == null) return true;
-        else if (a == null) return false;
-        return a.equals(b);
     }
 
     private String stringify(Object obj) {
@@ -37,16 +32,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return obj.toString();
     }
 
-    private void checkNumberOperand(Token operator, Object operand) {
-        if (operand instanceof Double) return;
-        throw new RuntimeError(operator,"Operand must be a number.");
+    @Override
+    public Void visitPrint(Stmt.Print stmt) {
+        System.out.println(stringify(evaluate(stmt.expr)));
+        return null;
     }
 
-    private void checkNumberOperand(Object left, Token operator, Object right) {
-        if (left instanceof Double && right instanceof Double) return;
-        throw new RuntimeError(operator,"Operands must be numbers.");
+    @Override
+    public Void visitExpression(Stmt.Expression stmt) {
+        evaluate(stmt.expr);
+        return null;
     }
 
+    @Override
     public Object visitBinary(Expr.Binary expr) {
         // left associative so order matters!
         Object left = evaluate(expr.left);
@@ -106,6 +104,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         };
     }
 
+    @Override
     public Object visitUnary(Expr.Unary expr) {
         Object right = evaluate(expr.right);
         return switch (expr.op.type) {
@@ -118,12 +117,35 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         };
     }
 
+    @Override
     public Object visitLiteral(Expr.Literal expr) {
         return expr.val;
     }
 
+    @Override
     public Object visitGroup(Expr.Group expr) {
         return evaluate(expr.expr);
     }
 
+    private boolean isTruthy(Object obj) {
+        if (obj == null) return false;
+        else if (obj instanceof Boolean) return (Boolean)obj;
+        return true;
+    }
+
+    private boolean isEqual(Object a, Object b) {
+        if (a == null && b == null) return true;
+        else if (a == null) return false;
+        return a.equals(b);
+    }
+
+    private void checkNumberOperand(Token operator, Object operand) {
+        if (operand instanceof Double) return;
+        throw new RuntimeError(operator,"Operand must be a number.");
+    }
+
+    private void checkNumberOperand(Object left, Token operator, Object right) {
+        if (left instanceof Double && right instanceof Double) return;
+        throw new RuntimeError(operator,"Operands must be numbers.");
+    }
 }
