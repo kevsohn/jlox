@@ -122,8 +122,10 @@ public class Scanner {
                     if (peek() == '\n') line++;
                     cur++;
                 }
-                if (atEnd())
+                if (atEnd()) {
                     Lox.error(line, "Unterminated string.");
+                    return;
+                }
                 // include end quote
                 cur++;
                 // remove quotes for literal arg
@@ -145,7 +147,8 @@ public class Scanner {
                         advanceNumbers();
                     }
                     addToken(TokenType.NUMBER, Double.parseDouble(text.substring(lexStart, cur)));
-                }else if (isAlpha(c)) {
+                }
+                else if (isAlpha(c)) {
                     while (isAlpha(peek()) || isNumber(peek()))
                         cur++;
                     // "max munch": always take the longest lexeme (---a => -- -a NOT - --a)
@@ -155,7 +158,8 @@ public class Scanner {
                     if (type == null)
                         type = TokenType.IDENTIFIER;
                     addToken(type);
-                }else
+                }
+                else
                     Lox.error(line, "Unexpected character.");
                 break;
         }
