@@ -1,13 +1,12 @@
 package lox;
 
-import java.util.List;
-
 abstract class Expr {
     interface Visitor<R> {
         R visitBinary(Expr.Binary expr);
         R visitUnary(Expr.Unary expr);
         R visitGroup(Expr.Group expr);
         R visitLiteral(Expr.Literal expr);
+        R visitVariable(Expr.Variable expr);
     }
 
     abstract <R> R accept(Expr.Visitor<R> v);
@@ -67,6 +66,19 @@ abstract class Expr {
         @Override
         <R> R accept(Expr.Visitor<R> v) {
             return v.visitLiteral(this);
+        }
+    }
+
+    static class Variable extends Expr {
+        final Token name;
+
+        Variable(Token name) {
+            this.name = name;
+        }
+
+        @Override
+        <R> R accept(Expr.Visitor<R> v) {
+            return v.visitVariable(this);
         }
     }
 

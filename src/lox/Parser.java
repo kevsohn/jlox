@@ -6,7 +6,9 @@ import java.util.List;
 import static lox.TokenType.*;
 
 // Precedence order lowest to highest
-// program -> statement* EOF
+// program -> declaration* EOF
+// declaration -> varDecl | statement
+// varDecl -> "var" IDENTIFIER ("=" expression)? ";"
 // statement -> printStmt | exprStmt
 // printStmt -> "print" expression ";"
 // exprStmt -> expression ";"
@@ -17,7 +19,7 @@ import static lox.TokenType.*;
 // factor -> exponent (( '*' | '/' | '%' ) exponent)*
 // exponent -> unary (( '*' | '/' | '%' ) unary)*
 // unary -> (( '!' | '-' ) unary) | primary
-// primary -> '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
+// primary -> IDENTIFIER | '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
     private static class ParseError extends RuntimeException {
 
@@ -31,14 +33,31 @@ public class Parser {
     }
 
     List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!atEnd())
+            statements.add(declaration());
+        return statements;
+    }
+
+    private Stmt declaration() {
         try {
-            List<Stmt> statements = new ArrayList<>();
-            while (!atEnd())
-                statements.add(statement());
-            return statements;
+            if (match(VAR))
+                return varDeclaration();
+            return statement();
         }catch (ParseError error) {
-            return null; // right now, panic mode
+            sync();
+            return null;
         }
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect variable name.");
+        Expr init = null;
+        if (match(EQ)) {
+            init = expression();
+        }
+        consume(SEMICOLON, "Missing semicolon after var declaration.");
+        return new Stmt.Var(name, init);
     }
 
     private Stmt statement() {
@@ -136,8 +155,9 @@ public class Parser {
     }
 
     private Expr primary() {
+        if (match(IDENTIFIER)) return new Expr.Variable(prev());
         // nil, true, and false have "null" in its literal field
-        if (match(NUMBER, STRING, NIL)) return new Expr.Literal(prev().literal);
+        else if (match(NUMBER, STRING, NIL)) return new Expr.Literal(prev().literal);
         else if (match(TRUE)) return new Expr.Literal(true);
         else if (match(FALSE)) return new Expr.Literal(false);
         else if (match(L_PAREN)) {
@@ -176,11 +196,10 @@ public class Parser {
         if (!atEnd()) cur++;
     }
 
-    // not sure if this needs to be a method
-    private void consume(TokenType type, String message) {
+    private Token consume(TokenType type, String message) {
         if (check(type)) {
             advance();
-            return;
+            return prev();
         }
         throw error(peek(), message);
     }

@@ -22,20 +22,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return expr.accept(this);
     }
 
-    private String stringify(Object obj) {
-        if (obj == null) return "nil";
-        else if (obj instanceof Double) {
-            String num = obj.toString();
-            if (num.endsWith(".0"))
-                return num.substring(0, num.length()-2);
-        }
-        return obj.toString();
+
+    @Override
+    public Void visitVar(Stmt.Var stmt) {
+        return null;
     }
 
     @Override
     public Void visitPrint(Stmt.Print stmt) {
         System.out.println(stringify(evaluate(stmt.expr)));
         return null;
+    }
+
+    @Override
+    public Object visitVariable(Expr.Variable expr) {
+        // lookup name?
     }
 
     @Override
@@ -125,6 +126,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitGroup(Expr.Group expr) {
         return evaluate(expr.expr);
+    }
+
+    private String stringify(Object obj) {
+        if (obj == null) return "nil";
+        else if (obj instanceof Double) {
+            String num = obj.toString();
+            if (num.endsWith(".0"))
+                return num.substring(0, num.length()-2);
+        }
+        return obj.toString();
     }
 
     private boolean isTruthy(Object obj) {

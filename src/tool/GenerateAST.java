@@ -18,11 +18,13 @@ public class GenerateAST {
                 "Binary : Expr left, Token op, Expr right",
                 "Unary : Token op, Expr right",
                 "Group : Expr expr",
-                "Literal : Object val"));
+                "Literal : Object val",
+                "Variable: Token name"));
 
         defineAST(outputDir, "Stmt", Arrays.asList(
                 "Expression : Expr expr",
-                "Print : Expr expr"));
+                "Print : Expr expr",
+                "Var : Token identifier, Expr init"));
     }
 
     private static void defineAST(String dir,
@@ -32,9 +34,9 @@ public class GenerateAST {
 
         writer.println("package lox;");
         writer.println();
-        writer.println("import java.util.List;");
+        /*writer.println("import java.util.List;");
         writer.println();
-        /*writer.println("// expr -> unary | binary | group | literal");
+        writer.println("// expr -> unary | binary | group | literal");
         writer.println("// unary -> (\"-\" | \"!\") expr");
         writer.println("// binary -> expr operator expr");
         writer.println("// group -> \"(\" expr \")\"");
