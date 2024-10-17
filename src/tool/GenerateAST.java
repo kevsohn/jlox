@@ -19,6 +19,10 @@ public class GenerateAST {
                 "Unary : Token op, Expr right",
                 "Group : Expr expr",
                 "Literal : Object val"));
+
+        defineAST(outputDir, "Stmt", Arrays.asList(
+                "Expression : Expr expr",
+                "Print : Expr expr"));
     }
 
     private static void defineAST(String dir,
@@ -30,14 +34,14 @@ public class GenerateAST {
         writer.println();
         writer.println("import java.util.List;");
         writer.println();
-        writer.println("// expr -> unary | binary | group | literal");
+        /*writer.println("// expr -> unary | binary | group | literal");
         writer.println("// unary -> (\"-\" | \"!\") expr");
         writer.println("// binary -> expr operator expr");
         writer.println("// group -> \"(\" expr \")\"");
         writer.println("// operator -> \"+\", \"-\", \"*\", \"/\", " +
                 "\"<\", \">\", \"!\", \"==\" | \"!=\" | \">=\" | \"<=\"  " +
                 "(only arithmetic & logic for now)");
-        writer.println("// literal -> NUMBER | STRING | \"nil\" | \"true\" | \"false\"");
+        writer.println("// literal -> NUMBER | STRING | \"nil\" | \"true\" | \"false\"");*/
         writer.println("abstract class "+ baseClassName +" {");
         // Visitor design pattern
         printVisitor(writer,baseClassName,subClasses);

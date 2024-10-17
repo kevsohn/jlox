@@ -1,6 +1,6 @@
 package lox;
 
-public class Interpreter implements Expr.Visitor<Object> {
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     public void interpret(Expr expr) {
         try {

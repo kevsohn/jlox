@@ -1,11 +1,16 @@
 package lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static lox.TokenType.*;
 
 // Precedence order lowest to highest
-// expr -> equality
+// program -> statement* EOF
+// statement -> printStmt | exprStmt
+// printStmt -> "print" expression ";"
+// exprStmt -> expression ";"
+// expression -> equality
 // equality -> comparison (( '==' | '!=' ) comparison)*
 // comparison -> term (( '>' | '>=' | '<=' | '<' ) term)*
 // term -> factor (( '+' | '-' ) factor)*
@@ -25,12 +30,33 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public Expr parse() {
+    List<Stmt> parse() {
         try {
-            return expression();
+            List<Stmt> statements = new ArrayList<>();
+            while (!atEnd())
+                statements.add(statement());
+            return statements;
         }catch (ParseError error) {
             return null; // right now, panic mode
         }
+    }
+
+    private Stmt statement() {
+        if (match(PRINT))
+            return printStatement();
+        return exprStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr expr = expression();
+        consume(SEMICOLON, "Missing semicolon after print.");
+        return new Stmt.Print(expr);
+    }
+
+    private Stmt exprStatement() {
+        Expr expr = expression();
+        consume(SEMICOLON, "Missing semicolon after expression.");
+        return new Stmt.Expression(expr);
     }
 
     private Expr expression() {
