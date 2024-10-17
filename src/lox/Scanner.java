@@ -123,7 +123,7 @@ public class Scanner {
                     cur++;
                 }
                 if (atEnd()) {
-                    Lox.error(line, "Unterminated string.");
+                    Lox.error(line-1, "Unterminated string.");
                     return;
                 }
                 // include end quote
