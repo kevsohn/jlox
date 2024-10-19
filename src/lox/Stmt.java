@@ -2,9 +2,9 @@ package lox;
 
 abstract class Stmt {
     interface Visitor<R> {
-        R visitExpression(Stmt.Expression stmt);
-        R visitPrint(Stmt.Print stmt);
-        R visitVar(Stmt.Var stmt);
+        R visitExpressionStmt(Stmt.Expression stmt);
+        R visitPrintStmt(Stmt.Print stmt);
+        R visitVarStmt(Stmt.Var stmt);
     }
 
     abstract <R> R accept(Stmt.Visitor<R> v);
@@ -18,7 +18,7 @@ abstract class Stmt {
 
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
-            return v.visitExpression(this);
+            return v.visitExpressionStmt(this);
         }
     }
 
@@ -31,22 +31,22 @@ abstract class Stmt {
 
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
-            return v.visitPrint(this);
+            return v.visitPrintStmt(this);
         }
     }
 
     static class Var extends Stmt {
-        final Token identifier;
-        final Expr init;
+        final Token name;
+        final Expr initializer;
 
-        Var(Token identifier, Expr init) {
-            this.identifier = identifier;
-            this.init = init;
+        Var(Token name, Expr initializer) {
+            this.name = name;
+            this.initializer = initializer;
         }
 
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
-            return v.visitVar(this);
+            return v.visitVarStmt(this);
         }
     }
 

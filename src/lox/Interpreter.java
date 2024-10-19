@@ -3,50 +3,48 @@ package lox;
 import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private final Environment env = new Environment();
 
     public void interpret(List<Stmt> statements) {
         try {
-            for (Stmt stmt : statements) {
+            for (Stmt stmt : statements)
                 execute(stmt);
-            }
         }catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
     }
 
-    private void execute(Stmt stmt) {
-        stmt.accept(this);
-    }
-
-    private Object evaluate(Expr expr) {
-        return expr.accept(this);
-    }
-
-
+    // var stmts have initializing exprs
     @Override
-    public Void visitVar(Stmt.Var stmt) {
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object val = null;
+        if (stmt.initializer != null) {
+            val = evaluate(stmt.initializer);
+        }
+        env.define(stmt.name.lexeme, val);
         return null;
     }
 
     @Override
-    public Void visitPrint(Stmt.Print stmt) {
+    public Void visitPrintStmt(Stmt.Print stmt) {
         System.out.println(stringify(evaluate(stmt.expr)));
         return null;
     }
 
     @Override
-    public Object visitVariable(Expr.Variable expr) {
-        // lookup name?
-    }
-
-    @Override
-    public Void visitExpression(Stmt.Expression stmt) {
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expr);
         return null;
     }
 
     @Override
-    public Object visitBinary(Expr.Binary expr) {
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return env.get(expr.name);
+    }
+
+    // the type casting makes it runtime error rather than compile-time
+    @Override
+    public Object visitBinaryExpr(Expr.Binary expr) {
         // left associative so order matters!
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
@@ -61,7 +59,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 else if (left instanceof Double && right instanceof String)
                     yield (double)left + (String)right;
                 else
-                    throw new RuntimeError(expr.op,"Operands must be two numbers or two strings.");
+                    throw new RuntimeError(expr.op,"Operands must be numbers and/or strings.");
             }
             case MINUS -> {
                 checkNumberOperand(left, expr.op, right);
@@ -106,7 +104,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitUnary(Expr.Unary expr) {
+    public Object visitUnaryExpr(Expr.Unary expr) {
         Object right = evaluate(expr.right);
         return switch (expr.op.type) {
             case MINUS -> {
@@ -119,13 +117,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitLiteral(Expr.Literal expr) {
+    public Object visitLiteralExpr(Expr.Literal expr) {
         return expr.val;
     }
 
     @Override
-    public Object visitGroup(Expr.Group expr) {
+    public Object visitGroupExpr(Expr.Group expr) {
         return evaluate(expr.expr);
+    }
+
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
+    private Object evaluate(Expr expr) {
+        return expr.accept(this);
     }
 
     private String stringify(Object obj) {
@@ -138,12 +144,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return obj.toString();
     }
 
+    // anything other than "nil" and "false" returns true
+    // for niche cases like "if (1)"
     private boolean isTruthy(Object obj) {
         if (obj == null) return false;
         else if (obj instanceof Boolean) return (Boolean)obj;
         return true;
     }
 
+    // equality op can compare different Objects
+    // follows Java's .equals rule
     private boolean isEqual(Object a, Object b) {
         if (a == null && b == null) return true;
         else if (a == null) return false;

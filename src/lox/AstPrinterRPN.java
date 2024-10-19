@@ -1,5 +1,6 @@
 package lox;
 
+/*
 public class AstPrinterRPN extends AstPrinter {
     // (1 + 2) * (4 - 3) -> 1 2 + 4 3 - *
     // really simple once already parsed with AST since
@@ -32,6 +33,7 @@ public class AstPrinterRPN extends AstPrinter {
                                 new Token(TokenType.MINUS,"-",null,1),
                                 new Expr.Literal(3)))
         );*/
+/*
         // RPN cant do unary well?
         System.out.println("(1 - 2) == -1");
         Expr expr = new Expr.Binary(
@@ -47,4 +49,4 @@ public class AstPrinterRPN extends AstPrinter {
         );
         System.out.println(new AstPrinterRPN().print(expr));
     }
-}
+}*/

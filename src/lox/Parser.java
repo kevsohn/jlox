@@ -21,9 +21,7 @@ import static lox.TokenType.*;
 // unary -> (( '!' | '-' ) unary) | primary
 // primary -> IDENTIFIER | '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
-    private static class ParseError extends RuntimeException {
-
-    }
+    private static class ParseError extends RuntimeException { }
 
     private final List<Token> tokens;
     private int cur = 0;

@@ -2,11 +2,11 @@ package lox;
 
 abstract class Expr {
     interface Visitor<R> {
-        R visitBinary(Expr.Binary expr);
-        R visitUnary(Expr.Unary expr);
-        R visitGroup(Expr.Group expr);
-        R visitLiteral(Expr.Literal expr);
-        R visitVariable(Expr.Variable expr);
+        R visitBinaryExpr(Expr.Binary expr);
+        R visitUnaryExpr(Expr.Unary expr);
+        R visitGroupExpr(Expr.Group expr);
+        R visitLiteralExpr(Expr.Literal expr);
+        R visitVariableExpr(Expr.Variable expr);
     }
 
     abstract <R> R accept(Expr.Visitor<R> v);
@@ -24,7 +24,7 @@ abstract class Expr {
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
-            return v.visitBinary(this);
+            return v.visitBinaryExpr(this);
         }
     }
 
@@ -39,7 +39,7 @@ abstract class Expr {
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
-            return v.visitUnary(this);
+            return v.visitUnaryExpr(this);
         }
     }
 
@@ -52,7 +52,7 @@ abstract class Expr {
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
-            return v.visitGroup(this);
+            return v.visitGroupExpr(this);
         }
     }
 
@@ -65,7 +65,7 @@ abstract class Expr {
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
-            return v.visitLiteral(this);
+            return v.visitLiteralExpr(this);
         }
     }
 
@@ -78,7 +78,7 @@ abstract class Expr {
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
-            return v.visitVariable(this);
+            return v.visitVariableExpr(this);
         }
     }
 

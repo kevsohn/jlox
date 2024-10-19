@@ -24,7 +24,7 @@ public class GenerateAST {
         defineAST(outputDir, "Stmt", Arrays.asList(
                 "Expression : Expr expr",
                 "Print : Expr expr",
-                "Var : Token identifier, Expr init"));
+                "Var : Token name, Expr initializer"));
     }
 
     private static void defineAST(String dir,
@@ -65,7 +65,7 @@ public class GenerateAST {
         w.println("    interface Visitor<R> {");
         for (String subClass: subClasses) {
             String subClassName = subClass.split(":")[0].trim();
-            w.println("        R visit"+subClassName+"("+baseClassName+"."+subClassName+" "+baseClassName.toLowerCase()+");");
+            w.println("        R visit"+subClassName+baseClassName+"("+baseClassName+"."+subClassName+" "+baseClassName.toLowerCase()+");");
         }
         w.println("    }");
     }
@@ -85,7 +85,7 @@ public class GenerateAST {
         w.println();
         w.println("        @Override");
         w.println("        <R> R accept("+baseClassName+".Visitor<R> v) {");
-        w.println("            return v.visit"+subClassName+"(this);");
+        w.println("            return v.visit"+subClassName+baseClassName+"(this);");
         w.println("        }");
         w.println("    }");
     }
