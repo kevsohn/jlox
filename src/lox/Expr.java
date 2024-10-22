@@ -2,6 +2,7 @@ package lox;
 
 abstract class Expr {
     interface Visitor<R> {
+        R visitAssignExpr(Expr.Assign expr);
         R visitBinaryExpr(Expr.Binary expr);
         R visitUnaryExpr(Expr.Unary expr);
         R visitGroupExpr(Expr.Group expr);
@@ -10,6 +11,21 @@ abstract class Expr {
     }
 
     abstract <R> R accept(Expr.Visitor<R> v);
+
+    static class Assign extends Expr {
+        final Token name;
+        final Expr value;
+
+        Assign(Token name, Expr value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Expr.Visitor<R> v) {
+            return v.visitAssignExpr(this);
+        }
+    }
 
     static class Binary extends Expr {
         final Expr left;

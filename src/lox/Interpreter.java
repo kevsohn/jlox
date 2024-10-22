@@ -21,7 +21,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (stmt.initializer != null) {
             val = evaluate(stmt.initializer);
         }
-        env.define(stmt.name.lexeme, val);
+        env.declare(stmt.name.lexeme, val);
         return null;
     }
 
@@ -35,6 +35,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expr);
         return null;
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        Object val = evaluate(expr.value);
+        env.assign(expr.name, val);
+        return val;
     }
 
     @Override
@@ -117,13 +124,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitLiteralExpr(Expr.Literal expr) {
-        return expr.val;
+    public Object visitGroupExpr(Expr.Group expr) {
+        return evaluate(expr.expr);
     }
 
     @Override
-    public Object visitGroupExpr(Expr.Group expr) {
-        return evaluate(expr.expr);
+    public Object visitLiteralExpr(Expr.Literal expr) {
+        return expr.val;
     }
 
     private void execute(Stmt stmt) {

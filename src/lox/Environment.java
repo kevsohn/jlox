@@ -6,8 +6,17 @@ import java.util.HashMap;
 public class Environment {
     private final Map<String, Object> values = new HashMap<>();
 
-    // return nil if var initializer is not set
-    void define(String name, Object value) {
+    void assign(Token name, Object value) {
+        if (values.containsKey(name.lexeme)) {
+            values.put(name.lexeme, value);
+            return;
+        }
+        throw new RuntimeError(name, "Undeclared variable: "+name.lexeme);
+    }
+
+    // returns "nil" if var initializer is not set (aka null)
+    // b/c stringify()
+    void declare(String name, Object value) {
         values.put(name, value);
     }
 

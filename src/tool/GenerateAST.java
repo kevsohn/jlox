@@ -15,11 +15,12 @@ public class GenerateAST {
         String outputDir = args[0];
 
         defineAST(outputDir, "Expr", Arrays.asList(
+                "Assign : Token name, Expr value",
                 "Binary : Expr left, Token op, Expr right",
                 "Unary : Token op, Expr right",
                 "Group : Expr expr",
                 "Literal : Object val",
-                "Variable: Token name"));
+                "Variable : Token name"));
 
         defineAST(outputDir, "Stmt", Arrays.asList(
                 "Expression : Expr expr",
@@ -89,5 +90,4 @@ public class GenerateAST {
         w.println("        }");
         w.println("    }");
     }
-
 }//EOC

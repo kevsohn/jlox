@@ -12,7 +12,8 @@ import static lox.TokenType.*;
 // statement -> printStmt | exprStmt
 // printStmt -> "print" expression ";"
 // exprStmt -> expression ";"
-// expression -> equality
+// expression -> assignment
+// assignment -> IDENTIFIER "=" assignment | equality
 // equality -> comparison (( '==' | '!=' ) comparison)*
 // comparison -> term (( '>' | '>=' | '<=' | '<' ) term)*
 // term -> factor (( '+' | '-' ) factor)*
@@ -77,7 +78,21 @@ public class Parser {
     }
 
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+    private Expr assignment() {
+        Expr expr = equality();
+        if (match(EQ)) {
+            Token op = prev();
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable)expr).name;
+                expr = assignment();
+                return new Expr.Assign(name, expr);
+            }
+            throw error(op, "Invalid assignment target");
+        }
+        return expr;
     }
 
     private Expr equality() {
