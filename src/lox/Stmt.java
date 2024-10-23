@@ -1,13 +1,29 @@
 package lox;
 
+import java.util.List;
+
 abstract class Stmt {
     interface Visitor<R> {
+        R visitBlockStmt(Stmt.Block stmt);
         R visitExpressionStmt(Stmt.Expression stmt);
         R visitPrintStmt(Stmt.Print stmt);
         R visitVarStmt(Stmt.Var stmt);
     }
 
     abstract <R> R accept(Stmt.Visitor<R> v);
+
+    static class Block extends Stmt {
+        final List<Stmt> statements;
+
+        Block(List<Stmt> statements) {
+            this.statements = statements;
+        }
+
+        @Override
+        <R> R accept(Stmt.Visitor<R> v) {
+            return v.visitBlockStmt(this);
+        }
+    }
 
     static class Expression extends Stmt {
         final Expr expr;

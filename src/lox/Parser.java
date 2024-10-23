@@ -9,7 +9,8 @@ import static lox.TokenType.*;
 // program -> declaration* EOF
 // declaration -> varDecl | statement
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-// statement -> printStmt | exprStmt
+// statement -> printStmt | exprStmt | block
+// block -> "{" statement* "}"
 // printStmt -> "print" expression ";"
 // exprStmt -> expression ";"
 // expression -> assignment
@@ -55,25 +56,36 @@ public class Parser {
         if (match(EQ)) {
             init = expression();
         }
-        consume(SEMICOLON, "Missing semicolon after var declaration.");
+        consume(SEMICOLON, "Missing ';' after var declaration.");
         return new Stmt.Var(name, init);
     }
 
     private Stmt statement() {
-        if (match(PRINT))
+        if (match(L_BRACE))
+            return block();
+        else if (match(PRINT))
             return printStatement();
         return exprStatement();
     }
 
+    private Stmt block() {
+        List<Stmt> stmts = new ArrayList<>();
+        while (!check(R_BRACE) && !atEnd()) {
+            stmts.add(declaration());
+        }
+        consume(R_BRACE, "Expect '}' to terminate block.");
+        return new Stmt.Block(stmts);
+    }
+
     private Stmt printStatement() {
         Expr expr = expression();
-        consume(SEMICOLON, "Missing semicolon after print.");
+        consume(SEMICOLON, "Missing ';' after print.");
         return new Stmt.Print(expr);
     }
 
     private Stmt exprStatement() {
         Expr expr = expression();
-        consume(SEMICOLON, "Missing semicolon after expression.");
+        consume(SEMICOLON, "Expect ';' to terminate expression.");
         return new Stmt.Expression(expr);
     }
 
@@ -175,9 +187,11 @@ public class Parser {
         else if (match(FALSE)) return new Expr.Literal(false);
         else if (match(L_PAREN)) {
             Expr expr = expression();
-            consume(R_PAREN, "Expect ')' after expression.");
+            consume(R_PAREN, "Expect ')' to close expression.");
             return new Expr.Group(expr);
         }
+        else if (match(R_PAREN))
+            throw error(peek(), "Missing '('.");
         throw error(peek(),"Expect expression.");
     }
 

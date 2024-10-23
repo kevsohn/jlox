@@ -3,7 +3,7 @@ package lox;
 import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
-    private final Environment env = new Environment();
+    private Environment env = new Environment();
 
     public void interpret(List<Stmt> statements) {
         try {
@@ -12,6 +12,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
+    }
+
+    // block chain ha. ha.
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        Environment previous = env;
+        try {
+            env = new Environment(previous);
+            for (Stmt statement : stmt.statements)
+                execute(statement);
+        }finally {
+            env = previous;
+        }
+        return null;
     }
 
     // var stmts have initializing exprs
