@@ -14,7 +14,7 @@ import static lox.TokenType.*;
 // printStmt -> "print" expression ";"
 // exprStmt -> expression ";"
 // expression -> assignment
-// assignment -> IDENTIFIER "=" assignment | equality
+// assignment -> IDENTIFIER ("=" assignment | ("+=" | "-=" ) equality) | equality
 // equality -> comparison (( '==' | '!=' ) comparison)*
 // comparison -> term (( '>' | '>=' | '<=' | '<' ) term)*
 // term -> factor (( '+' | '-' ) factor)*
@@ -70,6 +70,9 @@ public class Parser {
 
     private Stmt block() {
         List<Stmt> stmts = new ArrayList<>();
+        // the !atEnd() check is super important, otherwise possible to
+        // get an infinite loop if an error occurs inside a block due to
+        // sync() schenanigans reading past the R_BRACE
         while (!check(R_BRACE) && !atEnd()) {
             stmts.add(declaration());
         }
@@ -94,13 +97,37 @@ public class Parser {
     }
 
     private Expr assignment() {
+        // right associative
         Expr expr = equality();
-        if (match(EQ)) {
+        if (match(EQ, PLUS_EQ, MINUS_EQ)) {
             Token op = prev();
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable)expr).name;
-                expr = assignment();
-                return new Expr.Assign(name, expr);
+                Expr val;
+                if (op.type == EQ) {
+                    // recursion so "a = b = 1;" works
+                    val = assignment();
+                    return new Expr.Assign(name, val);
+                }
+                else {
+                    val = equality();
+                    // the issue with this method is you can get situations like
+                    // var a = 1; print a; => 1
+                    // var b = "jank"; print a += b; => "1jank"
+                    // due to the plus operator being overloaded for string concat.
+                    // this is peak dynamic typing but i dont like b/c
+                    // print a -= 1; => error since a is now a string.
+                    /*
+                    if (op.type == PLUS_EQ)
+                        op = new Token(PLUS, "+", null, op.line);
+                    else
+                        op = new Token(MINUS, "-", null, op.line);
+                    */
+                    // sol: add redundant plus operation in Interpreter
+                    if (op.type == MINUS_EQ)
+                        op = new Token(MINUS, "-", null, op.line);
+                    return new Expr.Assign(name, new Expr.Binary(expr, op, val));
+                }
             }
             throw error(op, "Invalid assignment target");
         }

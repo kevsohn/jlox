@@ -70,15 +70,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
         return switch (expr.op.type) {
+            case PLUS_EQ -> {
+                checkNumberOperand(left, expr.op, right);
+                yield (double) left + (double) right;
+            }
             case PLUS -> {
                 if (left instanceof Double && right instanceof Double)
                     yield (double)left + (double)right;
                 else if (left instanceof String && right instanceof String)
                     yield (String)left + (String)right;
+                // use stringify to avoid cases like (1 + "1" = 1.01)
                 else if (left instanceof String && right instanceof Double)
-                    yield (String)left + (double)right;
+                    yield (String)left + stringify((double)right);
                 else if (left instanceof Double && right instanceof String)
-                    yield (double)left + (String)right;
+                    yield stringify((double)left) + (String)right;
                 else
                     throw new RuntimeError(expr.op,"Operands must be numbers and/or strings.");
             }
