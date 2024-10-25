@@ -5,8 +5,9 @@ import java.util.List;
 abstract class Stmt {
     interface Visitor<R> {
         R visitIfStmt(Stmt.If stmt);
-        R visitBlockStmt(Stmt.Block stmt);
         R visitPrintStmt(Stmt.Print stmt);
+        R visitWhileStmt(Stmt.While stmt);
+        R visitBlockStmt(Stmt.Block stmt);
         R visitExpressionStmt(Stmt.Expression stmt);
         R visitVarStmt(Stmt.Var stmt);
     }
@@ -30,19 +31,6 @@ abstract class Stmt {
         }
     }
 
-    static class Block extends Stmt {
-        final List<Stmt> statements;
-
-        Block(List<Stmt> statements) {
-            this.statements = statements;
-        }
-
-        @Override
-        <R> R accept(Stmt.Visitor<R> v) {
-            return v.visitBlockStmt(this);
-        }
-    }
-
     static class Print extends Stmt {
         final Expr expr;
 
@@ -53,6 +41,34 @@ abstract class Stmt {
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
             return v.visitPrintStmt(this);
+        }
+    }
+
+    static class While extends Stmt {
+        final Expr condition;
+        final Stmt body;
+
+        While(Expr condition, Stmt body) {
+            this.condition = condition;
+            this.body = body;
+        }
+
+        @Override
+        <R> R accept(Stmt.Visitor<R> v) {
+            return v.visitWhileStmt(this);
+        }
+    }
+
+    static class Block extends Stmt {
+        final List<Stmt> statements;
+
+        Block(List<Stmt> statements) {
+            this.statements = statements;
+        }
+
+        @Override
+        <R> R accept(Stmt.Visitor<R> v) {
+            return v.visitBlockStmt(this);
         }
     }
 

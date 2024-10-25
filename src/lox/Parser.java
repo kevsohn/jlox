@@ -9,10 +9,10 @@ import static lox.TokenType.*;
 // program -> declaration* EOF
 // declaration -> varDecl | statement
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-// statement -> exprStmt | ifStmt | printStmt | blockStmt
+// statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| blockStmt
 // ifStmt -> "if" expression "then" ("else" statement)?
-// blockStmt -> "{" statement* "}"
 // printStmt -> "print" expression ";"
+// blockStmt -> "{" statement* "}"
 // exprStmt -> expression ";"
 // expression -> assignment
 // assignment -> IDENTIFIER ("=" assignment | ("+=" | "-=" ) logic_or) | logic_or
@@ -66,8 +66,10 @@ public class Parser {
     private Stmt statement() {
         // does order matter?
         if (match(IF)) return ifStmt();
-        else if (match(L_BRACE)) return blockStmt();
         else if (match(PRINT)) return printStmt();
+        else if (match(WHILE)) return whileStmt();
+        else if (match(FOR)) return forStmt();
+        else if (match(L_BRACE)) return blockStmt();
         return exprStatement();
     }
 
@@ -95,6 +97,18 @@ public class Parser {
             elseBranch = statement();
         }
         return new Stmt.If(cond, thenBranch, elseBranch);
+    }
+
+    private Stmt whileStmt() {
+        consume(L_PAREN, "Expect '(' after while condition.");
+        Expr cond = expression();
+        consume(R_PAREN, "Expect ')' after while condition.");
+        Stmt body = statement();
+        return new Stmt.While(cond, body);
+    }
+
+    private Stmt forStmt() {
+        return null;
     }
 
     private Stmt blockStmt() {
