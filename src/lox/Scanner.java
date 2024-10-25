@@ -18,7 +18,7 @@ public class Scanner {
         hmap.put("false", TokenType.FALSE);
         hmap.put("if", TokenType.IF);
         hmap.put("else", TokenType.ELSE);
-        hmap.put("elif", TokenType.ELIF);
+        hmap.put("then", TokenType.THEN);
         hmap.put("for", TokenType.FOR);
         hmap.put("while", TokenType.WHILE);
         hmap.put("var", TokenType.VAR);
@@ -28,6 +28,7 @@ public class Scanner {
         hmap.put("super", TokenType.SUPER);
         hmap.put("print", TokenType.PRINT);
         hmap.put("return", TokenType.RETURN);
+        hmap.put("break", TokenType.BREAK);
         hmap.put("nil", TokenType.NIL);
     }
 

@@ -9,7 +9,7 @@ import static lox.TokenType.*;
 // program -> declaration* EOF
 // declaration -> varDecl | statement
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-// statement -> printStmt | exprStmt | block
+// statement -> exprStmt | ifStmt | printStmt | blockStmt
 // block -> "{" statement* "}"
 // printStmt -> "print" expression ";"
 // exprStmt -> expression ";"
@@ -61,14 +61,30 @@ public class Parser {
     }
 
     private Stmt statement() {
-        if (match(L_BRACE))
-            return block();
-        else if (match(PRINT))
-            return printStatement();
+        // does order matter?
+        if (match(IF)) return ifStmt();
+        else if (match(L_BRACE)) return blockStmt();
+        else if (match(PRINT)) return printStmt();
         return exprStatement();
     }
 
-    private Stmt block() {
+    // if stmts need a delimiter to discern the condition from the following stmt.
+    // design decision: "if" expression blockStmt ("else" blockStmt)?
+    // this follows Go, where you need curly braces to define scope of 'if'.
+    // Java does "if" "(" expression ")" statement ("else" statement)?
+    // which is actually why "else if" is not a separate token but actually just
+    // a chain of ifs, unlike Python's elif.
+    // In the above, the "else" is tied to the nearest "if" to avoid ambiguity.
+    private Stmt ifStmt() {
+        Expr cond = expression();
+        consume(THEN, "Expect 'then' after if condition.");
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+        if (match(ELSE)) elseBranch = statement();
+        return new Stmt.If(cond, thenBranch, elseBranch);
+    }
+
+    private Stmt blockStmt() {
         List<Stmt> stmts = new ArrayList<>();
         // the !atEnd() check is super important, otherwise possible to
         // get an infinite loop if an error occurs inside a block due to
@@ -76,11 +92,11 @@ public class Parser {
         while (!check(R_BRACE) && !atEnd()) {
             stmts.add(declaration());
         }
-        consume(R_BRACE, "Expect '}' to terminate block.");
+        consume(R_BRACE, "Expect '}' after block.");
         return new Stmt.Block(stmts);
     }
 
-    private Stmt printStatement() {
+    private Stmt printStmt() {
         Expr expr = expression();
         consume(SEMICOLON, "Missing ';' after print.");
         return new Stmt.Print(expr);
@@ -88,7 +104,7 @@ public class Parser {
 
     private Stmt exprStatement() {
         Expr expr = expression();
-        consume(SEMICOLON, "Expect ';' to terminate expression.");
+        consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
     }
 
@@ -218,7 +234,7 @@ public class Parser {
             return new Expr.Group(expr);
         }
         else if (match(R_PAREN))
-            throw error(peek(), "Missing '('.");
+            throw error(peek(), "Missing '(' somewhere.");
         throw error(peek(),"Expect expression.");
     }
 
