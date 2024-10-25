@@ -10,11 +10,14 @@ import static lox.TokenType.*;
 // declaration -> varDecl | statement
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
 // statement -> exprStmt | ifStmt | printStmt | blockStmt
-// block -> "{" statement* "}"
+// ifStmt -> "if" expression "then" ("else" statement)?
+// blockStmt -> "{" statement* "}"
 // printStmt -> "print" expression ";"
 // exprStmt -> expression ";"
 // expression -> assignment
-// assignment -> IDENTIFIER ("=" assignment | ("+=" | "-=" ) equality) | equality
+// assignment -> IDENTIFIER ("=" assignment | ("+=" | "-=" ) logic_or) | logic_or
+// logic_or -> logic_and ("or" logic_and)*
+// logic_and -> equality ("and" equality)*
 // equality -> comparison (( '==' | '!=' ) comparison)*
 // comparison -> term (( '>' | '>=' | '<=' | '<' ) term)*
 // term -> factor (( '+' | '-' ) factor)*
@@ -77,10 +80,19 @@ public class Parser {
     // In the above, the "else" is tied to the nearest "if" to avoid ambiguity.
     private Stmt ifStmt() {
         Expr cond = expression();
-        consume(THEN, "Expect 'then' after if condition.");
+        // without delim, "if a == 1 and a +=2; print a;" fails cuz
+        // the condition becomes (a==1 and a) instead of failing with
+        // (a==1 and _).
+        consume(COLON, "Expect ':' after if condition.");
+        if (check(VAR))
+            throw error(peek(), "Global var declaration not allowed inside 'if'.");
         Stmt thenBranch = statement();
         Stmt elseBranch = null;
-        if (match(ELSE)) elseBranch = statement();
+        if (match(ELSE)) {
+            if (check(VAR))
+                throw error(peek(), "Global var declaration not allowed inside 'else'.");
+            elseBranch = statement();
+        }
         return new Stmt.If(cond, thenBranch, elseBranch);
     }
 
@@ -114,19 +126,19 @@ public class Parser {
 
     private Expr assignment() {
         // right associative
-        Expr expr = equality();
+        Expr expr = or();
         if (match(EQ, PLUS_EQ, MINUS_EQ)) {
             Token op = prev();
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable)expr).name;
                 Expr val;
                 if (op.type == EQ) {
-                    // recursion so "a = b = 1;" works
+                    // recursion so "a = b = 1;" works in a right associative way
                     val = assignment();
                     return new Expr.Assign(name, val);
                 }
                 else {
-                    val = equality();
+                    val = or();
                     // the issue with this method is you can get situations like
                     // var a = 1; print a; => 1
                     // var b = "jank"; print a += b; => "1jank"
@@ -148,6 +160,28 @@ public class Parser {
             throw error(op, "Invalid assignment target");
         }
         return expr;
+    }
+
+    private Expr or() {
+        Expr left = and();
+        // use while + no recursion for left associative
+        while (match(OR)) {
+            Token op = prev();
+            Expr right = and();
+            left = new Expr.Logical(left, op, right);
+        }
+        return left;
+    }
+
+    private Expr and() {
+        Expr left = equality();
+        // use while + no recursion for left associative
+        while (match(AND)) {
+            Token op = prev();
+            Expr right = equality();
+            left = new Expr.Logical(left, op, right);
+        }
+        return left;
     }
 
     private Expr equality() {

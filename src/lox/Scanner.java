@@ -12,13 +12,13 @@ public class Scanner {
 
     static {
         hmap = new HashMap<>();
-        hmap.put("and", TokenType.AND);
-        hmap.put("or", TokenType.OR);
+        //hmap.put("and", TokenType.AND);
+        //hmap.put("or", TokenType.OR);
         hmap.put("true", TokenType.TRUE);
         hmap.put("false", TokenType.FALSE);
         hmap.put("if", TokenType.IF);
         hmap.put("else", TokenType.ELSE);
-        hmap.put("then", TokenType.THEN);
+        //hmap.put("then", TokenType.THEN);
         hmap.put("for", TokenType.FOR);
         hmap.put("while", TokenType.WHILE);
         hmap.put("var", TokenType.VAR);
@@ -58,6 +58,7 @@ public class Scanner {
         switch (c) {
             // single char
             case ';': addToken(TokenType.SEMICOLON); break;
+            case ':': addToken(TokenType.COLON); break;
             case '.':
                 if (isNumber(peek())) {
                     advanceNumbers();
@@ -114,6 +115,16 @@ public class Scanner {
                         cur++;
                 }
                 else addToken(TokenType.SLASH);
+                break;
+
+            //doubles
+            case '&':
+                if (match('&')) addToken(TokenType.AND);
+                else Lox.error(line,"Expect another '&'.");
+                break;
+            case '|':
+                if (match('|')) addToken(TokenType.OR);
+                else Lox.error(line,"Expect another '|'.");
                 break;
 
             // has literal

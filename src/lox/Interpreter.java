@@ -1,6 +1,7 @@
 package lox;
 
 import java.util.List;
+import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private Environment env = new Environment();
@@ -64,6 +65,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object val = evaluate(expr.value);
         env.assign(expr.name, val);
         return val;
+    }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        Object left = evaluate(expr.left);
+        if (expr.op.type == OR) {
+            if (isTruthy(left)) return left;
+        }
+        else {
+            if (!isTruthy(left)) return left;
+        }
+        return evaluate(expr.right);
     }
 
     @Override
