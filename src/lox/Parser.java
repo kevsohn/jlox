@@ -86,6 +86,7 @@ public class Parser {
         consume(COLON, "Expect ':' after if condition.");
         if (check(VAR))
             throw error(peek(), "Global var declaration not allowed inside 'if'.");
+        // otherwise, just call declaration() instead of statement()
         Stmt thenBranch = statement();
         Stmt elseBranch = null;
         if (match(ELSE)) {
