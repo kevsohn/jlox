@@ -21,7 +21,7 @@ public class Lox {
         else if (args.length == 1)
             runFile(args[0]);
         else
-            runPrompt();
+            runREPL();
     }
 
     private static void runFile(String path) throws IOException {
@@ -31,7 +31,7 @@ public class Lox {
         if (hadRuntimeError) System.exit(70);
     }
 
-    private static void runPrompt() throws IOException {
+    private static void runREPL() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         while (true) {

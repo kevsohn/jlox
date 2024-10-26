@@ -1,6 +1,7 @@
 package lox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static lox.TokenType.*;
@@ -12,6 +13,8 @@ import static lox.TokenType.*;
 // statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| blockStmt
 // ifStmt -> "if" expression "then" ("else" statement)?
 // printStmt -> "print" expression ";"
+// whileStmt -> "while" "(" expression ")" statement
+// forStmt-> "for" "(" (varDecl | exprStmt)? ";" expression? ";" expression? ")" statement
 // blockStmt -> "{" statement* "}"
 // exprStmt -> expression ";"
 // expression -> assignment
@@ -70,7 +73,7 @@ public class Parser {
         else if (match(WHILE)) return whileStmt();
         else if (match(FOR)) return forStmt();
         else if (match(L_BRACE)) return blockStmt();
-        return exprStatement();
+        return exprStmt();
     }
 
     // if stmts need a delimiter to discern the condition from the following stmt.
@@ -100,7 +103,7 @@ public class Parser {
     }
 
     private Stmt whileStmt() {
-        consume(L_PAREN, "Expect '(' after while condition.");
+        consume(L_PAREN, "Expect '(' after 'while'.");
         Expr cond = expression();
         consume(R_PAREN, "Expect ')' after while condition.");
         Stmt body = statement();
@@ -108,7 +111,33 @@ public class Parser {
     }
 
     private Stmt forStmt() {
-        return null;
+        consume(L_PAREN, "Expect '(' after 'for'.");
+
+        // no direct semicolon consume cuz expecting statements
+        Stmt init;
+        if (match(SEMICOLON)) init = null;
+        else if (match(VAR)) init = varDeclaration();
+        else init = exprStmt();
+
+        Expr cond = null;
+        if (!check(SEMICOLON)) cond = expression();
+        consume(SEMICOLON, "Expect ';' after for condition.");
+
+        Expr incr = null;
+        if (!check(SEMICOLON)) incr = expression();
+        consume(R_PAREN, "Expect ')' after for increment.");
+
+        Stmt body = statement();
+        if (incr != null)
+            body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(incr)));
+
+        if (cond == null)
+            cond = new Expr.Literal(true);
+        body = new Stmt.While(cond, body);
+
+        if (init != null)
+            body = new Stmt.Block(Arrays.asList(init, body));
+        return body;
     }
 
     private Stmt blockStmt() {
@@ -129,7 +158,7 @@ public class Parser {
         return new Stmt.Print(expr);
     }
 
-    private Stmt exprStatement() {
+    private Stmt exprStmt() {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);

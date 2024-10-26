@@ -1,6 +1,7 @@
 package lox;
 
 import java.util.List;
+import java.util.Arrays;
 import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
