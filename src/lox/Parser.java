@@ -8,7 +8,7 @@ import static lox.TokenType.*;
 
 // Precedence order lowest to highest
 // program -> declaration* EOF
-// declaration -> varDecl | statement
+// declaration -> varDecl | statement 
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
 // statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| blockStmt
 // ifStmt -> "if" expression "then" ("else" statement)?

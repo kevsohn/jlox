@@ -12,8 +12,8 @@ public class Scanner {
 
     static {
         hmap = new HashMap<>();
-        //hmap.put("and", TokenType.AND);
-        //hmap.put("or", TokenType.OR);
+        hmap.put("and", TokenType.AND);
+        hmap.put("or", TokenType.OR);
         hmap.put("true", TokenType.TRUE);
         hmap.put("false", TokenType.FALSE);
         hmap.put("if", TokenType.IF);
