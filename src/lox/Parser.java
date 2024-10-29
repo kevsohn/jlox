@@ -27,15 +27,16 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 // Precedence order lowest to highest
 // program -> declaration* EOF
 // declaration -> fnDecl | varDecl | statement
-// fnDecl -> "fn" IDENTIFIER "(" params? ")" blockStmt
+// fnDecl -> "fn" function
+// function -> IDENTIFIER "(" params? ")" block
 // params -> IDENTIFIER ("," IDENTIFIER)*
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-// statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| blockStmt
+// statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| block
 // ifStmt -> "if" expression "then" ("else" statement)?
 // printStmt -> "print" expression ";"
 // whileStmt -> "while" "(" expression ")" statement
 // forStmt-> "for" "(" (varDecl | exprStmt)? ";" expression? ";" expression? ")" statement
-// blockStmt -> "{" statement* "}"
+// block -> "{" statement* "}"
 // exprStmt -> expression ";"
 // expression -> assignment
 // assignment -> IDENTIFIER ("=" assignment | ("+=" | "-=" ) logic_or) | logic_or
@@ -69,10 +70,8 @@ public class Parser {
 
     private Stmt declaration() {
         try {
-            if (match(VAR))
-                return varDeclaration();
-            else if (match(FN))
-                return fnDeclaration();
+            if (match(VAR)) return varDeclaration();
+            else if (match(FN)) return function("function");
             return statement();
         }catch (ParseError error) {
             sync();
@@ -80,20 +79,19 @@ public class Parser {
         }
     }
 
-    private Stmt fnDeclaration() {
-        Token name = consume(IDENTIFIER, "Expect function name.");
-        consume(L_PAREN, "Expect '(' for function parameters.");
+    private Stmt function(String kind) {
+        Token name = consume(IDENTIFIER, "Expect "+kind+" name.");
+        consume(L_PAREN, "Expect '(' after "+kind+" name.");
         List<Token> params = new ArrayList<>();
         if (!check(R_PAREN)) {
             do {
                 if (params.size() >= 255)
                     error(peek(),"Cannot exceed more than 255 parameters.");
-                if (!check(IDENTIFIER))
-                    throw error(peek(),"Parameters must be identifiers.");
-                params.add(peek());
+                params.add(consume(IDENTIFIER, "Parameters must be identifiers."));
             } while (match(COMMA));
         }
-        consume(L_BRACE, "Expect '{' for function body.");
+        consume(R_PAREN, "Expect ')' after parameters.");
+        consume(L_BRACE, "Expect '{' before "+kind+" body.");
         List<Stmt> body = block();
         return new Stmt.Function(name, params, body);
     }

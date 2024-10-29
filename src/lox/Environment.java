@@ -34,7 +34,7 @@ public class Environment {
     // returns "nil" if var initializer is not set (aka null)
     // b/c stringify().
     // only ever declare new vars in the local scope
-    void declare(String name, Object value) {
+    void define(String name, Object value) {
         values.put(name, value);
     }
 

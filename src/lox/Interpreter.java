@@ -5,7 +5,24 @@ import java.util.ArrayList;
 import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private final Environment globals = new Environment();
     private Environment env = new Environment();
+
+    // for native function decl
+    Interpreter() {
+        // clock() for benchmarking
+        globals.define("clock", new LoxCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double)System.currentTimeMillis() / 1000.;
+            }
+        });
+    }
 
     public void interpret(List<Stmt> statements) {
         try {
@@ -53,7 +70,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (stmt.initializer != null) {
             val = evaluate(stmt.initializer);
         }
-        env.declare(stmt.name.lexeme, val);
+        env.define(stmt.name.lexeme, val);
         return null;
     }
 
@@ -183,7 +200,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             throw new RuntimeError(expr.paren,"Object not callable.");
         LoxCallable function = (LoxCallable)callee;
         if (args.size() != function.arity())
-            throw new RuntimeError(expr.paren,"Expect "+function.arity()+" arguments but got"+args.size()+".");
+            throw new RuntimeError(expr.paren,"Expected "+function.arity()+" arguments but got"+args.size()+".");
         return function.call(this, args);
     }
 
