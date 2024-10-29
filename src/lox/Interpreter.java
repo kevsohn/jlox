@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
-    private final Environment globals = new Environment();
+    final Environment globals = new Environment();
     private Environment env = new Environment();
 
     // for native function decl
@@ -34,8 +34,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
+    // just creates a new function object to offload function calls
+    // to when visitCallExpr() is called
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
+        LoxFunction function = new LoxFunction(stmt);
+        env.define(stmt.name.lexeme, function);
         return null;
     }
 
@@ -73,7 +77,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    private void executeBlock(List<Stmt> stmts, Environment env) {
+    public void executeBlock(List<Stmt> stmts, Environment env) {
         Environment prev = this.env;
         try {
             this.env = env;
