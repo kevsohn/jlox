@@ -13,14 +13,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // clock() for benchmarking
         globals.define("clock", new LoxCallable() {
             @Override
-            public int arity() {
-                return 0;
-            }
+            public int arity() { return 0; }
 
             @Override
             public Object call(Interpreter interpreter, List<Object> arguments) {
                 return (double)System.currentTimeMillis() / 1000.;
             }
+
+            @Override
+            public String toString() { return "<native fn>"; }
         });
     }
 
@@ -31,6 +32,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
+    }
+
+    @Override
+    public Void visitFunctionStmt(Stmt.Function stmt) {
+        return null;
+    }
+
+    // var stmts have initializing exprs
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object val = null;
+        if (stmt.initializer != null) {
+            val = evaluate(stmt.initializer);
+        }
+        env.define(stmt.name.lexeme, val);
+        return null;
     }
 
     @Override
@@ -52,26 +69,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // block chain ha. ha.
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
-        Environment previous = env;
-        try {
-            env = new Environment(previous);
-            for (Stmt statement : stmt.statements)
-                execute(statement);
-        }finally {
-            env = previous;
-        }
+        executeBlock(stmt.statements, new Environment(env));
         return null;
     }
 
-    // var stmts have initializing exprs
-    @Override
-    public Void visitVarStmt(Stmt.Var stmt) {
-        Object val = null;
-        if (stmt.initializer != null) {
-            val = evaluate(stmt.initializer);
+    private void executeBlock(List<Stmt> stmts, Environment env) {
+        Environment prev = this.env;
+        try {
+            this.env = env;
+            for (Stmt statement : stmts)
+                execute(statement);
+        }finally {
+            this.env = prev;
         }
-        env.define(stmt.name.lexeme, val);
-        return null;
     }
 
     @Override
