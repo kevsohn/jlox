@@ -19,6 +19,7 @@ public class GenerateAST {
                 "Logical : Expr left, Token op, Expr right",
                 "Binary : Expr left, Token op, Expr right",
                 "Unary : Token op, Expr right",
+                "Call : Expr callee, Token paren, List<Expr> arguments",
                 "Group : Expr expr",
                 "Literal : Object val",
                 "Variable : Token name"));
@@ -29,7 +30,8 @@ public class GenerateAST {
                 "While : Expr condition, Stmt body",
                 "Block : List<Stmt> statements",
                 "Expression : Expr expr",
-                "Var : Token name, Expr initializer"));
+                "Var : Token name, Expr initializer",
+                "Function : Token name, List<Token> params, List<Stmt> body"));
     }
 
     private static void defineAST(String dir,

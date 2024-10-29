@@ -1,7 +1,7 @@
 package lox;
 
 import java.util.List;
-import java.util.Arrays;
+import java.util.ArrayList;
 import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
@@ -170,6 +170,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case BANG -> !isTruthy(right);
             default -> null;
         };
+    }
+
+    @Override
+    public Object visitCallExpr(Expr.Call expr) {
+        Object callee = evaluate(expr.callee);
+        List<Object> args = new ArrayList<>();
+        for (Expr argument: expr.arguments)
+            args.add(evaluate(argument));
+
+        if (!(callee instanceof LoxCallable))
+            throw new RuntimeError(expr.paren,"Object not callable.");
+        LoxCallable function = (LoxCallable)callee;
+        if (args.size() != function.arity())
+            throw new RuntimeError(expr.paren,"Expect "+function.arity()+" arguments but got"+args.size()+".");
+        return function.call(this, args);
     }
 
     @Override

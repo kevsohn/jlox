@@ -6,9 +6,29 @@ import java.util.List;
 
 import static lox.TokenType.*;
 
+/* How to implement arrays?
+Could have a keyword "list" in addition to the "var" keyword with
+ declaration -> varDecl | listDecl | statement
+ listDecl -> "list" IDENTIFIER ("=" "[" (NUMBER | STRING) ("," (NUMBER | STRING))* "]")? ";"
+or could have the initializer be a primary in the expression tree with
+ listDecl -> "list" IDENTIFIER ("=" expression)? ";"
+ primary -> "[" (NUMBER | STRING) ("," (NUMBER | STRING))* "]"
+but does mean I have to modify the assignment syntax since you shouldn't be able to assign
+a single value to the list identifier.
+Also, it means I may need 2 separate environments to keep track of duplicate list and var names
+unless I forbid this by throwing an error if the hmap contains the name. would have to change
+variable declaration to disallow redeclaring a var with the same name.
+In terms of implementation, just add to List<Object> until one hits "]" and throw runtime error
+if not all just NUMBER or STRING.
+
+Otherwise, could treat "[]" like a function call on an IDENTIFIER
+ */
+
 // Precedence order lowest to highest
 // program -> declaration* EOF
-// declaration -> varDecl | statement 
+// declaration -> fnDecl | varDecl | statement
+// fnDecl -> "fn" IDENTIFIER "(" params? ")" blockStmt
+// params -> IDENTIFIER ("," IDENTIFIER)*
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
 // statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| blockStmt
 // ifStmt -> "if" expression "then" ("else" statement)?
@@ -27,6 +47,8 @@ import static lox.TokenType.*;
 // factor -> exponent (( '*' | '/' | '%' ) exponent)*
 // exponent -> unary (( '*' | '/' | '%' ) unary)*
 // unary -> (( '!' | '-' ) unary) | primary
+// call -> primary ( "(" arguments? ")" )*
+// arguments -> expression ("," expression)*
 // primary -> IDENTIFIER | '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
     private static class ParseError extends RuntimeException { }
@@ -49,11 +71,31 @@ public class Parser {
         try {
             if (match(VAR))
                 return varDeclaration();
+            else if (match(FN))
+                return fnDeclaration();
             return statement();
         }catch (ParseError error) {
             sync();
             return null;
         }
+    }
+
+    private Stmt fnDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect function name.");
+        consume(L_PAREN, "Expect '(' for function parameters.");
+        List<Token> params = new ArrayList<>();
+        if (!check(R_PAREN)) {
+            do {
+                if (params.size() >= 255)
+                    error(peek(),"Cannot exceed more than 255 parameters.");
+                if (!check(IDENTIFIER))
+                    throw error(peek(),"Parameters must be identifiers.");
+                params.add(peek());
+            } while (match(COMMA));
+        }
+        consume(L_BRACE, "Expect '{' for function body.");
+        List<Stmt> body = block();
+        return new Stmt.Function(name, params, body);
     }
 
     private Stmt varDeclaration() {
@@ -72,7 +114,7 @@ public class Parser {
         else if (match(PRINT)) return printStmt();
         else if (match(WHILE)) return whileStmt();
         else if (match(FOR)) return forStmt();
-        else if (match(L_BRACE)) return blockStmt();
+        else if (match(L_BRACE)) return new Stmt.Block(block());
         return exprStmt();
     }
 
@@ -140,7 +182,7 @@ public class Parser {
         return body;
     }
 
-    private Stmt blockStmt() {
+    private List<Stmt> block() {
         List<Stmt> stmts = new ArrayList<>();
         // the !atEnd() check is super important, otherwise possible to
         // get an infinite loop if an error occurs inside a block due to
@@ -149,7 +191,7 @@ public class Parser {
             stmts.add(declaration());
         }
         consume(R_BRACE, "Expect '}' after block.");
-        return new Stmt.Block(stmts);
+        return stmts;
     }
 
     private Stmt printStmt() {
@@ -297,7 +339,34 @@ public class Parser {
             Expr right = unary();
             return new Expr.Unary(op, right);
         }
-        return primary();
+        return call();
+    }
+
+    private Expr call() {
+        Expr expr = primary();
+        while (true) {
+            // for calls upon calls f()+
+            if (match(L_PAREN))
+                expr = finishCall(expr);
+            else
+                break;
+        }
+        return expr;
+    }
+
+    private Expr finishCall(Expr expr) {
+        List<Expr> args = new ArrayList<>();
+        if (!check(R_PAREN)) {
+            do {
+                // added to be consistent with clox bytecode
+                if (args.size() >= 255)
+                    // doesn't throw error and enter panic mode cuz parsed correctly
+                    error(peek(), "Cannot exceed more than 255 arguments.");
+                args.add(expression());
+            } while (match(COMMA));
+        }
+        Token paren = consume(R_PAREN, "Expect ')' after arguments.");
+        return new Expr.Call(expr, paren, args);
     }
 
     private Expr primary() {

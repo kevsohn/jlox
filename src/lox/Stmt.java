@@ -10,6 +10,7 @@ abstract class Stmt {
         R visitBlockStmt(Stmt.Block stmt);
         R visitExpressionStmt(Stmt.Expression stmt);
         R visitVarStmt(Stmt.Var stmt);
+        R visitFunctionStmt(Stmt.Function stmt);
     }
 
     abstract <R> R accept(Stmt.Visitor<R> v);
@@ -97,6 +98,23 @@ abstract class Stmt {
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
             return v.visitVarStmt(this);
+        }
+    }
+
+    static class Function extends Stmt {
+        final Token name;
+        final List<Token> params;
+        final List<Stmt> body;
+
+        Function(Token name, List<Token> params, List<Stmt> body) {
+            this.name = name;
+            this.params = params;
+            this.body = body;
+        }
+
+        @Override
+        <R> R accept(Stmt.Visitor<R> v) {
+            return v.visitFunctionStmt(this);
         }
     }
 
