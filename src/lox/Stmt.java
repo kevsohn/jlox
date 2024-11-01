@@ -6,6 +6,7 @@ abstract class Stmt {
     interface Visitor<R> {
         R visitIfStmt(Stmt.If stmt);
         R visitPrintStmt(Stmt.Print stmt);
+        R visitReturnStmt(Stmt.Return stmt);
         R visitWhileStmt(Stmt.While stmt);
         R visitBlockStmt(Stmt.Block stmt);
         R visitExpressionStmt(Stmt.Expression stmt);
@@ -42,6 +43,21 @@ abstract class Stmt {
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
             return v.visitPrintStmt(this);
+        }
+    }
+
+    static class Return extends Stmt {
+        final Token keyword;
+        final Expr expr;
+
+        Return(Token keyword, Expr expr) {
+            this.keyword = keyword;
+            this.expr = expr;
+        }
+
+        @Override
+        <R> R accept(Stmt.Visitor<R> v) {
+            return v.visitReturnStmt(this);
         }
     }
 

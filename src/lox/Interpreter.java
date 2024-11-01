@@ -29,7 +29,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         try {
             for (Stmt stmt : statements)
                 execute(stmt);
-        }catch (RuntimeError error) {
+        } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
     }
@@ -61,6 +61,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         else if (stmt.elseBranch != null)
             execute(stmt.elseBranch);
         return null;
+    }
+
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        Object val = null;
+        if (stmt.expr != null)
+            val = evaluate(stmt.expr);
+        throw new Return(val);
     }
 
     @Override

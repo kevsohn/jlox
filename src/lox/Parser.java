@@ -31,9 +31,10 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 // function -> IDENTIFIER "(" params? ")" block
 // params -> IDENTIFIER ("," IDENTIFIER)*
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-// statement -> exprStmt | ifStmt | printStmt | whileStmt | forStmt| block
+// statement -> exprStmt | ifStmt | printStmt | returnStmt | whileStmt | forStmt | block
 // ifStmt -> "if" expression "then" ("else" statement)?
 // printStmt -> "print" expression ";"
+// returnStmt -> "return" expression? ";"
 // whileStmt -> "while" "(" expression ")" statement
 // forStmt-> "for" "(" (varDecl | exprStmt)? ";" expression? ";" expression? ")" statement
 // block -> "{" statement* "}"
@@ -110,6 +111,7 @@ public class Parser {
         // does order matter?
         if (match(IF)) return ifStmt();
         else if (match(PRINT)) return printStmt();
+        else if (match(RETURN)) return returnStmt();
         else if (match(WHILE)) return whileStmt();
         else if (match(FOR)) return forStmt();
         else if (match(L_BRACE)) return new Stmt.Block(block());
@@ -140,6 +142,15 @@ public class Parser {
             elseBranch = statement();
         }
         return new Stmt.If(cond, thenBranch, elseBranch);
+    }
+
+    private Stmt returnStmt() {
+        Token keyword = prev();
+        Expr expr = null;
+        if (!check(SEMICOLON))
+            expr = expression();
+        consume(SEMICOLON, "Missing ';' after return.");
+        return new Stmt.Return(keyword, expr);
     }
 
     private Stmt whileStmt() {
