@@ -1,0 +1,12 @@
+fn makeCounter() {
+	var i=0;
+	fn counter() {
+		i+=1;
+		print i;
+	}
+	return counter;
+}
+
+var count = makeCounter();
+for (var i=0; i<3; i+=1) 
+	count();

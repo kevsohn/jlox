@@ -80,6 +80,10 @@ public class Parser {
         }
     }
 
+    // "kind" param used to accommodate functions and methods.
+    // wrap the parsed params into a Function object to be bound to an identifier
+    // on fn declaration to a LoxFunction runtime object.
+    // calls are independent to functions.
     private Stmt function(String kind) {
         Token name = consume(IDENTIFIER, "Expect "+kind+" name.");
         consume(L_PAREN, "Expect '(' after "+kind+" name.");
@@ -89,7 +93,7 @@ public class Parser {
                 if (params.size() >= 255)
                     error(peek(),"Cannot exceed more than 255 parameters.");
                 params.add(consume(IDENTIFIER, "Parameters must be identifiers."));
-            } while (match(COMMA));
+            }while (match(COMMA));
         }
         consume(R_PAREN, "Expect ')' after parameters.");
         consume(L_BRACE, "Expect '{' before "+kind+" body.");

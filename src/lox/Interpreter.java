@@ -6,7 +6,7 @@ import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
-    private Environment env = new Environment();
+    private Environment env = globals;
 
     // for native function decl
     Interpreter() {
@@ -34,11 +34,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    // just creates a new function object to offload function calls
-    // to when visitCallExpr() is called
+    // just binds the identifier to the parsed Function object.
+    // offloads function calls to the LoxFunction object.
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        LoxFunction function = new LoxFunction(stmt);
+        // b/c the env state is temporary w/o saved states,
+        // pass a copy of the cur env to be stored in case
+        // nested fns need to ref vars declared in top level.
+        LoxFunction function = new LoxFunction(stmt, env);
         env.define(stmt.name.lexeme, function);
         return null;
     }
@@ -63,6 +66,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    // wraps the interpreted value into a
+    // catchable Return obj by the LoxFunction obj.
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
         Object val = null;
@@ -85,6 +90,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    // executes the list of stmts in the given environment
+    // returns the interpreter's env back to its top level
     public void executeBlock(List<Stmt> stmts, Environment env) {
         Environment prev = this.env;
         try {
@@ -211,6 +218,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         };
     }
 
+    // processes args and checks for errors before passing it to the LoxFunction object,
+    // which handles the actual call.
     @Override
     public Object visitCallExpr(Expr.Call expr) {
         Object callee = evaluate(expr.callee);
