@@ -1,0 +1,10 @@
+var a = "global";
+{
+	fn f() {
+		print a;
+	}
+
+	f();
+	var a = "local";
+	f();
+}

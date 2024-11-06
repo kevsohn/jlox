@@ -31,6 +31,10 @@ public class Environment {
         throw new RuntimeError(name, "Undeclared variable: "+name.lexeme);
     }
 
+    void assignAt(Token name, Object value, int depth) {
+        ancestor(depth).values.put(name.lexeme, value);
+    }
+
     // returns "nil" if var initializer is not set (aka null)
     // b/c stringify().
     // only ever declare new vars in the local scope
@@ -44,6 +48,18 @@ public class Environment {
         else if (shadowing != null)
             return shadowing.get(name);
         throw new RuntimeError(name,"Undefined variable: '"+name.lexeme+"'.");
+    }
+
+    Object getAt(Token name, int depth) {
+        return ancestor(depth).values.get(name.lexeme);
+    }
+
+    Environment ancestor(int depth) {
+        Environment cur = this;
+        for (int i=0; i<depth; i++) {
+            cur = cur.shadowing;
+        }
+        return cur;
     }
 
 }

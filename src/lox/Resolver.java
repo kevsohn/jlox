@@ -1,12 +1,21 @@
 package lox;
 
-import com.sun.source.tree.Scope;
-
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
 
+// traverse the AST and emulate env calls that would be done by the Interpreter,
+// creating a stack of env calls.
+// counts and reports back to the Interpreter the current stack depth that the vars
+// are defined in for future lookup during runtime.
+// basically saves the env state at runtime and limits where the assigned value for
+// the var should be taken from:
+// i.e. Expr.Var objects inside the function body will no longer check for the var
+// cascading from the innermost env to global but instead will just grab it from
+// the saved depth from the innermost env, avoiding issues from var shadowing.
+// only handles local scope variables; globals are dealt by the Interpreter.
+// assumes Interpreter and Resolver are synced.
 class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Interpreter interpreter;
     private final Stack<Map<String,Boolean>> scopes = new Stack<>();
@@ -163,6 +172,7 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    // variable equivalent to a function/method call
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         // case: var a = a;
@@ -171,7 +181,6 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         // run into this error cond
         if (!scopes.isEmpty() && scopes.peek().get(expr.name.lexeme) == Boolean.FALSE)
             Lox.error(expr.name, "Can't read local var in its own initializer.");
-        // what about case: var a = b? !scopes.peek().containsKey()
         resolveLocal(expr, expr.name);
         return null;
     }

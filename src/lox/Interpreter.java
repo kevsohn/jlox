@@ -1,12 +1,16 @@
 package lox;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+
 import static lox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
     private Environment env = globals;
+    private final Map<Expr, Integer> locals = new HashMap<>();
 
     // for native function decl
     Interpreter() {
@@ -118,8 +122,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object val = evaluate(expr.value);
-        env.assign(expr.name, val);
+        Integer depth = locals.get(expr);
+        if (depth != null)
+            env.assignAt(expr.name, val, depth);
+        else
+            globals.assign(expr.name, val);
         return val;
+    }
+
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return lookupVariable(expr, expr.name);
+    }
+
+    private Object lookupVariable(Expr expr, Token name) {
+        Integer depth = locals.get(expr);
+        if (depth == null) {
+            // either global or undeclared; error handled by .get() in Environment
+            return globals.get(name);
+        }
+        return env.getAt(name, depth);
     }
 
     @Override
@@ -132,11 +154,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             if (!isTruthy(left)) return left;
         }
         return evaluate(expr.right);
-    }
-
-    @Override
-    public Object visitVariableExpr(Expr.Variable expr) {
-        return env.get(expr.name);
     }
 
     // the type casting makes it runtime error rather than compile-time
@@ -251,6 +268,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    // Expr obj is unique
+    void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
     }
 
     private String stringify(Object obj) {
