@@ -19,6 +19,10 @@ import java.util.Stack;
 class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Interpreter interpreter;
     private final Stack<Map<String,Boolean>> scopes = new Stack<>();
+    private enum FunctionType {
+        NONE, FUNCTION
+    }
+    private FunctionType curFunction = FunctionType.NONE;
 
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
@@ -36,6 +40,19 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private void resolve(Expr expr) {
         expr.accept(this);
+    }
+
+    private void declare(Token name) {
+        if (scopes.isEmpty()) return;
+        Map<String, Boolean> scope = scopes.peek();
+        if (scope.containsKey(name.lexeme))
+            Lox.error(name, "Variable previously declared in this scope.");
+        scope.put(name.lexeme, false);
+    }
+
+    private void define(Token name) {
+        if (scopes.isEmpty()) return;
+        scopes.peek().put(name.lexeme, true);
     }
 
     private void beginScope() {
@@ -71,6 +88,8 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
+        if (curFunction == FunctionType.NONE)
+            Lox.error(stmt.keyword, "Cannot return from top-level.");
         if (stmt.expr != null)
             resolve(stmt.expr);
         return null;
@@ -98,25 +117,17 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    private void declare(Token name) {
-        if (scopes.isEmpty()) return;
-        scopes.peek().put(name.lexeme, false);
-    }
-
-    private void define(Token name) {
-        if (scopes.isEmpty()) return;
-        scopes.peek().put(name.lexeme, true);
-    }
-
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
         declare(stmt.name);
         define(stmt.name);
-        resolveFunction(stmt);
+        resolveFunction(stmt, FunctionType.FUNCTION);
         return null;
     }
 
-    private void resolveFunction(Stmt.Function stmt) {
+    private void resolveFunction(Stmt.Function stmt, FunctionType type) {
+        FunctionType shadowingFunction = curFunction;
+        curFunction = type;
         beginScope();
         for (Token param : stmt.params) {
             declare(param);
@@ -124,6 +135,7 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         resolve(stmt.body);
         endScope();
+        curFunction = shadowingFunction;
     }
 
     @Override
