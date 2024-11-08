@@ -170,10 +170,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
         return switch (expr.op.type) {
-            case PLUS_EQ -> {
-                checkNumberOperand(left, expr.op, right);
-                yield (double) left + (double) right;
-            }
             case PLUS -> {
                 if (left instanceof Double && right instanceof Double)
                     yield (double)left + (double)right;
@@ -187,9 +183,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
                 else
                     throw new RuntimeError(expr.op,"Operands must be numbers and/or strings.");
             }
-            case MINUS -> {
+            case MINUS, MINUS_MINUS -> {
                 checkNumberOperand(left, expr.op, right);
                 yield (double)left - (double)right;
+            }
+            case PLUS_EQ, PLUS_PLUS -> {
+                checkNumberOperand(left, expr.op, right);
+                yield (double)left + (double)right;
             }
             case STAR -> {
                 checkNumberOperand(left, expr.op, right);

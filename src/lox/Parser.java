@@ -234,7 +234,7 @@ public class Parser {
     private Expr assignment() {
         // right associative
         Expr expr = or();
-        if (match(EQ, PLUS_EQ, MINUS_EQ)) {
+        if (match(EQ, PLUS_EQ, MINUS_EQ, PLUS_PLUS, MINUS_MINUS)) {
             Token op = prev();
             if (expr instanceof Expr.Variable) {
                 Token name = ((Expr.Variable)expr).name;
@@ -244,25 +244,18 @@ public class Parser {
                     val = assignment();
                     return new Expr.Assign(name, val);
                 }
-                else {
+                else if (op.type == PLUS_EQ || op.type == MINUS_EQ)
                     val = or();
-                    // the issue with this method is you can get situations like
-                    // var a = 1; print a; => 1
-                    // var b = "jank"; print a += b; => "1jank"
-                    // due to the plus operator being overloaded for string concat.
-                    // this is peak dynamic typing but i dont like b/c
-                    // print a -= 1; => error since a is now a string.
-                    /*
-                    if (op.type == PLUS_EQ)
-                        op = new Token(PLUS, "+", null, op.line);
-                    else
-                        op = new Token(MINUS, "-", null, op.line);
-                    */
-                    // sol: add redundant plus operation in Interpreter
-                    if (op.type == MINUS_EQ)
-                        op = new Token(MINUS, "-", null, op.line);
-                    return new Expr.Assign(name, new Expr.Binary(expr, op, val));
-                }
+                else
+                    val = new Expr.Literal(Double.valueOf(1.));
+                // the issue with this method is you can get situations like
+                // var a = 1; print a; => 1
+                // var b = "jank"; print a += b; => "1jank"
+                // due to the plus operator being overloaded for string concat.
+                // this is peak dynamic typing but i dont like b/c
+                // print a -= 1; => error since a is now a string.
+                // sol: add redundant plus operation in Interpreter
+                return new Expr.Assign(name, new Expr.Binary(expr, op, val));
             }
             throw error(op, "Invalid assignment target");
         }
