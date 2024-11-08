@@ -35,6 +35,7 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 // ifStmt -> "if" expression "then" ("else" statement)?
 // printStmt -> "print" expression ";"
 // returnStmt -> "return" expression? ";"
+// breakStmt -> "break" ";"
 // whileStmt -> "while" "(" expression ")" statement
 // forStmt-> "for" "(" (varDecl | exprStmt)? ";" expression? ";" expression? ")" statement
 // block -> "{" statement* "}"
@@ -116,6 +117,7 @@ public class Parser {
         if (match(IF)) return ifStmt();
         else if (match(PRINT)) return printStmt();
         else if (match(RETURN)) return returnStmt();
+        else if (match(BREAK)) return breakStmt();
         else if (match(WHILE)) return whileStmt();
         else if (match(FOR)) return forStmt();
         else if (match(L_BRACE)) return new Stmt.Block(block());
@@ -155,6 +157,12 @@ public class Parser {
             expr = expression();
         consume(SEMICOLON, "Missing ';' after return.");
         return new Stmt.Return(keyword, expr);
+    }
+
+    private Stmt breakStmt() {
+        Token keyword = prev();
+        consume(SEMICOLON, "Missing ';' after break.");
+        return new Stmt.Break(keyword);
     }
 
     private Stmt whileStmt() {

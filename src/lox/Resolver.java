@@ -19,10 +19,8 @@ import java.util.Stack;
 class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     private final Interpreter interpreter;
     private final Stack<Map<String,Boolean>> scopes = new Stack<>();
-    private enum FunctionType {
-        NONE, FUNCTION
-    }
-    private FunctionType curFunction = FunctionType.NONE;
+    private boolean curFunction = false;
+    private boolean curLoop = false;
 
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
@@ -88,7 +86,7 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
-        if (curFunction == FunctionType.NONE)
+        if (!curFunction)
             Lox.error(stmt.keyword, "Cannot return from top-level.");
         if (stmt.expr != null)
             resolve(stmt.expr);
@@ -96,10 +94,25 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitBreakStmt(Stmt.Break stmt) {
+        if (!curLoop)
+            Lox.error(stmt.keyword, "Must be enclosed by a loop.");
+        return null;
+    }
+
+    @Override
     public Void visitWhileStmt(Stmt.While stmt) {
+        resolveWhile(stmt, true);
+        curLoop = false;
+        return null;
+    }
+
+    private void resolveWhile(Stmt.While stmt, boolean curLoop) {
+        boolean enclosing = this.curLoop;
+        this.curLoop = curLoop;
         resolve(stmt.condition);
         resolve(stmt.body);
-        return null;
+        this.curLoop = enclosing;
     }
 
     @Override
@@ -121,13 +134,13 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitFunctionStmt(Stmt.Function stmt) {
         declare(stmt.name);
         define(stmt.name);
-        resolveFunction(stmt, FunctionType.FUNCTION);
+        resolveFunction(stmt, true);
         return null;
     }
 
-    private void resolveFunction(Stmt.Function stmt, FunctionType type) {
-        FunctionType shadowingFunction = curFunction;
-        curFunction = type;
+    private void resolveFunction(Stmt.Function stmt, boolean curFunction) {
+        boolean enclosing = this.curFunction;
+        this.curFunction = curFunction;
         beginScope();
         for (Token param : stmt.params) {
             declare(param);
@@ -135,7 +148,7 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         resolve(stmt.body);
         endScope();
-        curFunction = shadowingFunction;
+        this.curFunction = enclosing;
     }
 
     @Override
