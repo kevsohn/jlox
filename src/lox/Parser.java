@@ -1,5 +1,6 @@
 package lox;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,11 +27,13 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 
 // Precedence order lowest to highest
 // program -> declaration* EOF
-// declaration -> fnDecl | varDecl | statement
+// declaration -> fnDecl | varDecl | arrDecl | statement
 // fnDecl -> "fn" function
 // function -> IDENTIFIER "(" params? ")" block
 // params -> IDENTIFIER ("," IDENTIFIER)*
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
+// arrDecl -> "arr" IDENTIFIER "[" NUMBER "]" ("=" "{" arrInit? "}" )? ";"
+// arrInit -> primary ("," primary)*
 // statement -> exprStmt | ifStmt | printStmt | returnStmt | whileStmt | forStmt | block
 // ifStmt -> "if" expression "then" ("else" statement)?
 // printStmt -> "print" expression ";"
@@ -50,7 +53,7 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 // factor -> exponent (( '*' | '/' | '%' ) exponent)*
 // exponent -> unary (( '*' | '/' | '%' ) unary)*
 // unary -> (( '!' | '-' ) unary) | primary
-// call -> primary ( "(" arguments? ")" )*
+// call -> primary ( ("(" arguments? ")") | ("[" NUMBER "]") )*
 // arguments -> expression ("," expression)*
 // primary -> IDENTIFIER | '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
@@ -73,6 +76,7 @@ public class Parser {
     private Stmt declaration() {
         try {
             if (match(VAR)) return varDeclaration();
+            else if (match(ARR)) return arrDeclaration();
             else if (match(FN)) return function("function");
             return statement();
         }catch (ParseError error) {
@@ -100,6 +104,42 @@ public class Parser {
         consume(L_BRACE, "Expect '{' before "+kind+" body.");
         List<Stmt> body = block();
         return new Stmt.Function(name, params, body);
+    }
+
+    private Stmt arrDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect array name.");
+        consume(L_BRACKET, "Expect '[' after array name.");
+        /*
+        List<Token> sizes = new ArrayList<>();
+        do {
+            sizes.add(consume(NUMBER, "Expect an integer array size."));
+            consume(R_BRACKET, "Expect ']' after array size.");
+        }while (match(L_BRACKET));
+        */
+        Token size = consume(NUMBER, "Expect an integer size.");
+        consume(R_BRACKET, "Expect ']' after array size.");
+
+        List<Expr> initElements = null;
+        if (match(EQ)) {
+            // {{},{}} recursive arrDefition() calls
+            //arrDefinition(init);
+            consume(L_BRACE, "Expect '{' for array initialization.");
+            if (!check(R_BRACE)) {
+                initElements = new ArrayList<>();
+                // type-check and instance-check in Resolver/Interpreter
+                do {
+                    Expr val = expression();
+                    if (!(val instanceof Expr.Literal))
+                        throw error(peek(), "Array value must be a literal.");
+                    initElements.add(val);
+                } while (match(COMMA));
+                if (initElements.size() != (double)size.literal)
+                    throw error(peek(), "Expected "+size.lexeme+" element(s) but got "+initElements.size()+".");
+            }
+            consume(R_BRACE, "Missing '}' after array initialization.");
+        }
+        consume(SEMICOLON, "Missing ';' after array declaration.");
+        return new Stmt.Array(name, size, initElements);
     }
 
     private Stmt varDeclaration() {
@@ -236,32 +276,49 @@ public class Parser {
         Expr expr = or();
         if (match(EQ, PLUS_EQ, MINUS_EQ, PLUS_PLUS, MINUS_MINUS)) {
             Token op = prev();
-            if (expr instanceof Expr.Variable) {
-                Token name = ((Expr.Variable)expr).name;
-                Expr val;
-                if (op.type == EQ) {
-                    // recursion so "a = b = 1;" works in a right associative way
-                    val = assignment();
-                    return new Expr.Assign(name, val);
-                }
-                else if (op.type == PLUS_EQ || op.type == MINUS_EQ)
-                    val = or();
-                else
-                    val = new Expr.Literal(Double.valueOf(1.));
-                // the issue with this method is you can get situations like
-                // var a = 1; print a; => 1
-                // var b = "jank"; print a += b; => "1jank"
-                // due to the plus operator being overloaded for string concat.
-                // this is peak dynamic typing but i dont like b/c
-                // print a -= 1; => error since a is now a string.
-                // sol: add redundant plus operation in Interpreter
-                return new Expr.Assign(name, new Expr.Binary(expr, op, val));
-            }
+            if (expr instanceof Expr.Variable)
+                return assignVariable((Expr.Variable)expr, op);
+            //else if (expr instanceof Expr.Array)
+            //    return assignArray((Expr.Array)expr, op);
             throw error(op, "Invalid assignment target");
         }
         return expr;
     }
 
+    private Expr assignVariable(Expr.Variable var, Token operator) {
+        Expr val;
+        if (operator.type == EQ) {
+            // recursion so "a = b = 1;" works in a right associative way
+            // this now allows "a = b[0] = c = 1;"
+            val = assignment();
+            return new Expr.Assign(var.name, val);
+        }
+        else if (operator.type == PLUS_EQ || operator.type == MINUS_EQ)
+            val = or();
+        else
+            val = new Expr.Literal(Double.valueOf(1.));
+        // due to the plus operator being overloaded w/ string concat,
+        // added redundant plus operation in Interpreter
+        return new Expr.Assign(var.name, new Expr.Binary(var, operator, val));
+    }
+/*
+    private Expr assignArray(Expr.Array arr, Token operator) {
+        Expr val;
+        if (operator.type == EQ) {
+            // recursion so "a = b = 1;" works in a right associative way
+            // this now allows "a = b[0] = c = 1;"
+            val = assignment();
+            return new Expr.AssignArray(arr.name, arr.indices, val);
+        }
+        else if (operator.type == PLUS_EQ || operator.type == MINUS_EQ)
+            val = or();
+        else
+            val = new Expr.Literal(Double.valueOf(1.));
+        // due to the plus operator being overloaded w/ string concat,
+        // added redundant plus operation in Interpreter
+        return new Expr.AssignArray(arr.name, arr.indices, new Expr.Binary(arr.name, operator, val));
+    }
+*/
     private Expr or() {
         Expr left = and();
         // use while + no recursion for left associative
@@ -357,14 +414,18 @@ public class Parser {
     }
 
     private Expr call() {
-        Expr expr = primary();
+        Expr expr = array();
+        // can have nested function and/or field/method calls.
+        // if not callable, caught at runtime.
         while (true) {
-            // for calls upon calls f()+
             if (match(L_PAREN))
                 expr = finishCall(expr);
+            //else if (match(DOT))
+
             else
                 break;
         }
+
         return expr;
     }
 
@@ -377,14 +438,27 @@ public class Parser {
                     // doesn't throw error and enter panic mode cuz parsed correctly
                     error(peek(), "Cannot exceed more than 255 arguments.");
                 args.add(expression());
-            } while (match(COMMA));
+            }while (match(COMMA));
         }
         Token paren = consume(R_PAREN, "Expect ')' after arguments.");
-        return new Expr.Call(expr, paren, args);
+        return new Expr.Call(expr, args, paren);
+    }
+
+    private Expr array() {
+        Expr expr = primary();
+        if (match(L_BRACKET)) {
+            Token index = consume(NUMBER, "Array index must be a positive integer.");
+            Token bracket = consume(R_BRACKET, "Expect ']' after array index.");
+            return new Expr.Array(expr, index, bracket);
+        }
+        return expr;
     }
 
     private Expr primary() {
-        if (match(IDENTIFIER)) return new Expr.Variable(prev());
+        if (match(IDENTIFIER)) {
+            Token name = prev();
+            return new Expr.Variable(name);
+        }
         // nil, true, and false have "null" in its literal field
         else if (match(NUMBER, STRING, NIL)) return new Expr.Literal(prev().literal);
         else if (match(TRUE)) return new Expr.Literal(true);
@@ -414,7 +488,7 @@ public class Parser {
             if (prev().type == SEMICOLON) return;
             // statements usually start with these keywords
             switch (peek().type) {
-                case CLASS, FOR, FN, IF, PRINT, RETURN, VAR, WHILE:
+                case CLASS, FOR, FN, IF, PRINT, RETURN, BREAK, VAR, ARR, WHILE:
                     return;
             }
             advance();

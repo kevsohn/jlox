@@ -50,6 +50,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitArrayStmt(Stmt.Array stmt) {
+        if ((Double)stmt.size.literal == 0.)
+            throw new RuntimeError(stmt.name, "Cannot create an array of size 0.");
+        List<Object> initElems = null;
+        if (stmt.initializer != null) {
+            initElems = new ArrayList<>();
+            for (Expr expr : stmt.initializer)
+                initElems.add(evaluate(expr));
+        }
+        LoxArray array = new LoxArray(stmt, env, initElems);
+        env.define(stmt.name.lexeme, array);
+        return null;
+    }
+
     // var stmts have initializing exprs
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
@@ -255,8 +270,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             throw new RuntimeError(expr.paren,"Object not callable.");
         LoxCallable function = (LoxCallable)callee;
         if (args.size() != function.arity())
-            throw new RuntimeError(expr.paren,"Expected "+function.arity()+" arguments but got"+args.size()+".");
+            throw new RuntimeError(expr.paren,"Expected "+function.arity()+" arguments but got "+args.size()+".");
         return function.call(this, args);
+    }
+
+    @Override
+    public Object visitArrayExpr(Expr.Array expr) {
+        Object callee = evaluate(expr.name);
+        int index = ((Double)expr.index.literal).intValue();
+        List<Object> indices = new ArrayList<>();
+        indices.add(index);
+
+        if (!(callee instanceof LoxCallable))
+            throw new RuntimeError(expr.bracket,"Object not indexable.");
+        LoxCallable array = (LoxArray)callee;
+        if (index >= array.arity())
+            throw new RuntimeError(expr.bracket,"Index out of bounds: array has length "+array.arity()+".");
+        return array.call(this, indices);
     }
 
     @Override

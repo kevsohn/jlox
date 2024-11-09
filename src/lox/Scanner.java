@@ -21,14 +21,15 @@ public class Scanner {
         //hmap.put("then", TokenType.THEN);
         hmap.put("for", TokenType.FOR);
         hmap.put("while", TokenType.WHILE);
-        hmap.put("var", TokenType.VAR);
-        hmap.put("class", TokenType.CLASS);
-        hmap.put("fn", TokenType.FN);
-        hmap.put("this", TokenType.THIS);
-        hmap.put("super", TokenType.SUPER);
         hmap.put("print", TokenType.PRINT);
         hmap.put("return", TokenType.RETURN);
         hmap.put("break", TokenType.BREAK);
+        hmap.put("var", TokenType.VAR);
+        hmap.put("arr", TokenType.ARR);
+        hmap.put("fn", TokenType.FN);
+        hmap.put("class", TokenType.CLASS);
+        hmap.put("this", TokenType.THIS);
+        hmap.put("super", TokenType.SUPER);
         hmap.put("nil", TokenType.NIL);
     }
 
@@ -72,6 +73,8 @@ public class Scanner {
             case '}': addToken(TokenType.R_BRACE); break;
             case '(': addToken(TokenType.L_PAREN); break;
             case ')': addToken(TokenType.R_PAREN); break;
+            case '[': addToken(TokenType.L_BRACKET); break;
+            case ']': addToken(TokenType.R_BRACKET); break;
             case '*': addToken(TokenType.STAR); break;
             case '%': addToken(TokenType.MOD); break;
             case '^': addToken(TokenType.HAT); break;

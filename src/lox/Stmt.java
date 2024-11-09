@@ -12,6 +12,7 @@ abstract class Stmt {
         R visitBlockStmt(Stmt.Block stmt);
         R visitExpressionStmt(Stmt.Expression stmt);
         R visitVarStmt(Stmt.Var stmt);
+        R visitArrayStmt(Stmt.Array stmt);
         R visitFunctionStmt(Stmt.Function stmt);
     }
 
@@ -128,6 +129,23 @@ abstract class Stmt {
         @Override
         <R> R accept(Stmt.Visitor<R> v) {
             return v.visitVarStmt(this);
+        }
+    }
+
+    static class Array extends Stmt {
+        final Token name;
+        final Token size;
+        final List<Expr> initializer;
+
+        Array(Token name, Token size, List<Expr> initializer) {
+            this.name = name;
+            this.size = size;
+            this.initializer = initializer;
+        }
+
+        @Override
+        <R> R accept(Stmt.Visitor<R> v) {
+            return v.visitArrayStmt(this);
         }
     }
 

@@ -12,6 +12,7 @@ abstract class Expr {
         R visitGroupExpr(Expr.Group expr);
         R visitLiteralExpr(Expr.Literal expr);
         R visitVariableExpr(Expr.Variable expr);
+        R visitArrayExpr(Expr.Array expr);
     }
 
     abstract <R> R accept(Expr.Visitor<R> v);
@@ -82,13 +83,13 @@ abstract class Expr {
 
     static class Call extends Expr {
         final Expr callee;
-        final Token paren;
         final List<Expr> arguments;
+        final Token paren;
 
-        Call(Expr callee, Token paren, List<Expr> arguments) {
+        Call(Expr callee, List<Expr> arguments, Token paren) {
             this.callee = callee;
-            this.paren = paren;
             this.arguments = arguments;
+            this.paren = paren;
         }
 
         @Override
@@ -133,6 +134,23 @@ abstract class Expr {
         @Override
         <R> R accept(Expr.Visitor<R> v) {
             return v.visitVariableExpr(this);
+        }
+    }
+
+    static class Array extends Expr {
+        final Expr name;
+        final Token index;
+        final Token bracket;
+
+        Array(Expr name, Token index, Token bracket) {
+            this.name = name;
+            this.index = index;
+            this.bracket = bracket;
+        }
+
+        @Override
+        <R> R accept(Expr.Visitor<R> v) {
+            return v.visitArrayExpr(this);
         }
     }
 

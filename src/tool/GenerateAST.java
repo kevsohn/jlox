@@ -16,13 +16,15 @@ public class GenerateAST {
 
         defineAST(outputDir, "Expr", Arrays.asList(
                 "Assign : Token name, Expr value",
+                //"AssignArray : Token name, List<Token> indices, Expr value",
                 "Logical : Expr left, Token op, Expr right",
                 "Binary : Expr left, Token op, Expr right",
                 "Unary : Token op, Expr right",
-                "Call : Expr callee, Token paren, List<Expr> arguments",
+                "Call : Expr callee, List<Expr> arguments, Token paren",
                 "Group : Expr expr",
                 "Literal : Object val",
-                "Variable : Token name"));
+                "Variable : Token name",
+                "Array : Expr name, Token index, Token bracket"));
 
         defineAST(outputDir, "Stmt", Arrays.asList(
                 "If : Expr condition, Stmt thenBranch, Stmt elseBranch",
@@ -33,6 +35,7 @@ public class GenerateAST {
                 "Block : List<Stmt> statements",
                 "Expression : Expr expr",
                 "Var : Token name, Expr initializer",
+                "Array : Token name, Token size, List<Expr> initializer",
                 "Function : Token name, List<Token> params, List<Stmt> body"));
     }
 
