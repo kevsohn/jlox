@@ -5,6 +5,7 @@ import java.util.List;
 abstract class Expr {
     interface Visitor<R> {
         R visitAssignExpr(Expr.Assign expr);
+        R visitAssignArrayExpr(Expr.AssignArray expr);
         R visitLogicalExpr(Expr.Logical expr);
         R visitBinaryExpr(Expr.Binary expr);
         R visitUnaryExpr(Expr.Unary expr);
@@ -29,6 +30,25 @@ abstract class Expr {
         @Override
         <R> R accept(Expr.Visitor<R> v) {
             return v.visitAssignExpr(this);
+        }
+    }
+
+    static class AssignArray extends Expr {
+        final Expr callee;
+        final Expr index;
+        final Token bracket;
+        final Expr value;
+
+        AssignArray(Expr callee, Expr index, Token bracket, Expr value) {
+            this.callee = callee;
+            this.index = index;
+            this.bracket = bracket;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Expr.Visitor<R> v) {
+            return v.visitAssignArrayExpr(this);
         }
     }
 
@@ -138,12 +158,12 @@ abstract class Expr {
     }
 
     static class Array extends Expr {
-        final Expr name;
-        final Token index;
+        final Expr callee;
+        final Expr index;
         final Token bracket;
 
-        Array(Expr name, Token index, Token bracket) {
-            this.name = name;
+        Array(Expr callee, Expr index, Token bracket) {
+            this.callee = callee;
             this.index = index;
             this.bracket = bracket;
         }

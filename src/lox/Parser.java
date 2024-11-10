@@ -116,7 +116,8 @@ public class Parser {
             consume(R_BRACKET, "Expect ']' after array size.");
         }while (match(L_BRACKET));
         */
-        Token size = consume(NUMBER, "Expect an integer size.");
+        // any expr allowed as long as it evals to a Double
+        Expr size = expression();
         consume(R_BRACKET, "Expect ']' after array size.");
 
         List<Expr> initElements = null;
@@ -126,15 +127,13 @@ public class Parser {
             consume(L_BRACE, "Expect '{' for array initialization.");
             if (!check(R_BRACE)) {
                 initElements = new ArrayList<>();
-                // type-check and instance-check in Resolver/Interpreter
+                // type-check in the Interpreter
                 do {
+                    // allows any expression as long as it evals to
+                    // the allowed types.
                     Expr val = expression();
-                    if (!(val instanceof Expr.Literal))
-                        throw error(peek(), "Array value must be a literal.");
                     initElements.add(val);
-                } while (match(COMMA));
-                if (initElements.size() != (double)size.literal)
-                    throw error(peek(), "Expected "+size.lexeme+" element(s) but got "+initElements.size()+".");
+                }while (match(COMMA));
             }
             consume(R_BRACE, "Missing '}' after array initialization.");
         }
@@ -278,13 +277,15 @@ public class Parser {
             Token op = prev();
             if (expr instanceof Expr.Variable)
                 return assignVariable((Expr.Variable)expr, op);
-            //else if (expr instanceof Expr.Array)
-            //    return assignArray((Expr.Array)expr, op);
+            else if (expr instanceof Expr.Array)
+                return assignArray((Expr.Array)expr, op);
             throw error(op, "Invalid assignment target");
         }
         return expr;
     }
 
+    // due to the plus operator being overloaded w/ string concat,
+    // added redundant plus operation in Interpreter for '+=' and '++'
     private Expr assignVariable(Expr.Variable var, Token operator) {
         Expr val;
         if (operator.type == EQ) {
@@ -297,28 +298,28 @@ public class Parser {
             val = or();
         else
             val = new Expr.Literal(Double.valueOf(1.));
-        // due to the plus operator being overloaded w/ string concat,
-        // added redundant plus operation in Interpreter
         return new Expr.Assign(var.name, new Expr.Binary(var, operator, val));
     }
-/*
+
+    // pass all the params of Expr.Array instead of passing Expr.Array itself b/c
+    // then evaluate(expr) in the Interpreter will return the LoxArray object
+    // through evoking the visitor of Expr.Variable rather than
+    // the value of the array call given by the visitor of Expr.Array
     private Expr assignArray(Expr.Array arr, Token operator) {
         Expr val;
         if (operator.type == EQ) {
             // recursion so "a = b = 1;" works in a right associative way
             // this now allows "a = b[0] = c = 1;"
             val = assignment();
-            return new Expr.AssignArray(arr.name, arr.indices, val);
+            return new Expr.AssignArray(arr.callee, arr.index, arr.bracket, val);
         }
         else if (operator.type == PLUS_EQ || operator.type == MINUS_EQ)
             val = or();
         else
             val = new Expr.Literal(Double.valueOf(1.));
-        // due to the plus operator being overloaded w/ string concat,
-        // added redundant plus operation in Interpreter
-        return new Expr.AssignArray(arr.name, arr.indices, new Expr.Binary(arr.name, operator, val));
+        return new Expr.AssignArray(arr.callee, arr.index, arr.bracket, new Expr.Binary(arr.callee, operator, val));
     }
-*/
+
     private Expr or() {
         Expr left = and();
         // use while + no recursion for left associative
@@ -447,7 +448,9 @@ public class Parser {
     private Expr array() {
         Expr expr = primary();
         if (match(L_BRACKET)) {
-            Token index = consume(NUMBER, "Array index must be a positive integer.");
+            if (!(expr instanceof Expr.Variable))
+                throw error(prev(), "Expression not indexable.");
+            Expr index = expression();
             Token bracket = consume(R_BRACKET, "Expect ']' after array index.");
             return new Expr.Array(expr, index, bracket);
         }

@@ -134,12 +134,12 @@ abstract class Stmt {
 
     static class Array extends Stmt {
         final Token name;
-        final Token size;
+        final Expr length;
         final List<Expr> initializer;
 
-        Array(Token name, Token size, List<Expr> initializer) {
+        Array(Token name, Expr length, List<Expr> initializer) {
             this.name = name;
-            this.size = size;
+            this.length = length;
             this.initializer = initializer;
         }
 
