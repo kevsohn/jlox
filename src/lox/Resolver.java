@@ -139,10 +139,6 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
         define(stmt.name);
         resolve(stmt.length);
-        if (stmt.initializer != null) {
-            for (Expr expr : stmt.initializer)
-                resolve(expr);
-        }
         return null;
     }
 
@@ -176,6 +172,7 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitAssignArrayExpr(Expr.AssignArray expr) {
+        resolve(expr.index);
         resolve(expr.value);
         // expr.callee is type Expr.Variable
         resolveLocal(expr.callee, ((Expr.Variable)expr.callee).name);

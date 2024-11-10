@@ -7,24 +7,6 @@ import java.util.List;
 
 import static lox.TokenType.*;
 
-/* How to implement arrays?
-Could have a keyword "list" in addition to the "var" keyword with
- declaration -> varDecl | listDecl | statement
- listDecl -> "list" IDENTIFIER ("=" "[" (NUMBER | STRING) ("," (NUMBER | STRING))* "]")? ";"
-or could have the initializer be a primary in the expression tree with
- listDecl -> "list" IDENTIFIER ("=" expression)? ";"
- primary -> "[" (NUMBER | STRING) ("," (NUMBER | STRING))* "]"
-but does mean I have to modify the assignment syntax since you shouldn't be able to assign
-a single value to the list identifier.
-Also, it means I may need 2 separate environments to keep track of duplicate list and var names
-unless I forbid this by throwing an error if the hmap contains the name. would have to change
-variable declaration to disallow redeclaring a var with the same name.
-In terms of implementation, just add to List<Object> until one hits "]" and throw runtime error
-if not all just NUMBER or STRING.
-
-Otherwise, could treat "[]" like a function call on an IDENTIFIER
- */
-
 // Precedence order lowest to highest
 // program -> declaration* EOF
 // declaration -> fnDecl | varDecl | arrDecl | statement
@@ -32,8 +14,8 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 // function -> IDENTIFIER "(" params? ")" block
 // params -> IDENTIFIER ("," IDENTIFIER)*
 // varDecl -> "var" IDENTIFIER ("=" expression)? ";"
-// arrDecl -> "arr" IDENTIFIER "[" NUMBER "]" ("=" "{" arrInit? "}" )? ";"
-// arrInit -> primary ("," primary)*
+// arrDecl -> "arr" IDENTIFIER "[" expression "]" ("=" "{" arguments? "}" )? ";"
+// arguments -> expression ("," expression)*
 // statement -> exprStmt | ifStmt | printStmt | returnStmt | whileStmt | forStmt | block
 // ifStmt -> "if" expression "then" ("else" statement)?
 // printStmt -> "print" expression ";"
@@ -53,8 +35,8 @@ Otherwise, could treat "[]" like a function call on an IDENTIFIER
 // factor -> exponent (( '*' | '/' | '%' ) exponent)*
 // exponent -> unary (( '*' | '/' | '%' ) unary)*
 // unary -> (( '!' | '-' ) unary) | primary
-// call -> primary ( ("(" arguments? ")") | ("[" NUMBER "]") )*
-// arguments -> expression ("," expression)*
+// call -> array ("(" arguments? ")")*
+// arrayCall -> primary "[" expression "]"
 // primary -> IDENTIFIER | '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
     private static class ParseError extends RuntimeException { }
@@ -109,13 +91,6 @@ public class Parser {
     private Stmt arrDeclaration() {
         Token name = consume(IDENTIFIER, "Expect array name.");
         consume(L_BRACKET, "Expect '[' after array name.");
-        /*
-        List<Token> sizes = new ArrayList<>();
-        do {
-            sizes.add(consume(NUMBER, "Expect an integer array size."));
-            consume(R_BRACKET, "Expect ']' after array size.");
-        }while (match(L_BRACKET));
-        */
         // any expr allowed as long as it evals to a Double
         Expr size = expression();
         consume(R_BRACKET, "Expect ']' after array size.");
