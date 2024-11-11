@@ -1,5 +1,29 @@
+print "### Test array ###";
 arr a[3];
-for (var i=0; i<3; i++) {
+for (var i=0; i<a.len; i++) {
 	a[i] = i+1;
-	print a[i];
+	print "a[" + i + "] = " + a[i];
 }
+
+print;
+
+print "### Test array assignment through fn call ###";
+fn f() {       
+	arr a[1];
+	return a;
+}              
+print f()[0];
+f()[0] = 1;  
+print "Should print nil due to fn closure.";
+print f()[0];
+
+print;
+
+print "### Testing saving fn output to variable ###";
+var a = f();
+print a;
+print a[0];
+a[0] = 1;
+print "Should be 1: output = " + a[0];
+print "Should print nil still.";
+print f()[0];

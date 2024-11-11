@@ -80,7 +80,8 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
-        resolve(stmt.expr);
+        if (stmt.expr != null)
+            resolve(stmt.expr);
         return null;
     }
 
@@ -171,11 +172,11 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
-    public Object visitAssignArrayExpr(Expr.AssignArray expr) {
-        resolve(expr.index);
+    public Object visitAssignCallerExpr(Expr.AssignCaller expr) {
         resolve(expr.value);
-        // expr.callee is type Expr.Variable
-        resolveLocal(expr.callee, ((Expr.Variable)expr.callee).name);
+        resolve(expr.callee);
+        for (Expr args : expr.arguments)
+            resolve(args);
         return null;
     }
 
@@ -206,11 +207,17 @@ class Resolver implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             resolve(arg);
         return null;
     }
-
+/*
     @Override
     public Object visitArrayExpr(Expr.Array expr) {
         resolve(expr.callee);
         resolve(expr.index);
+        return null;
+    }
+*/
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        resolve(expr.caller);
         return null;
     }
 

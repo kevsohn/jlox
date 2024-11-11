@@ -137,7 +137,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
-        System.out.println(stringify(evaluate(stmt.expr)));
+        if (stmt.expr != null)
+            System.out.println(stringify(evaluate(stmt.expr)));
+        else
+            System.out.println();
         return null;
     }
 
@@ -161,49 +164,38 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     // assignment is dealt by the LoxArray object, so
     // no need to call env for reassignment, unlike vars.
     @Override
-    public Object visitAssignArrayExpr(Expr.AssignArray expr) {
+    public Object visitAssignCallerExpr(Expr.AssignCaller expr) {
         Object callee = evaluate(expr.callee);
-        if (!(callee instanceof LoxArray))
-            throw new RuntimeError(expr.bracket, "Object not an array.");
-        LoxArray array = (LoxArray)callee;
+        if (!(callee instanceof LoxArray array))
+            throw new RuntimeError(expr.error, "Object cannot be assigned to.");
         // index checks happen inside LoxArray
-        Object index = evaluate(expr.index);
+        // currently a list, but it should only have 1 elem
+        // future-proof in case functions/classes can be assigned to
+        List<Object> index = new ArrayList<>();
+        for (Expr arg : expr.arguments)
+            index.add(evaluate(arg));
         Object val = evaluate(expr.value);
-        array.assign(this, index, val);
+        array.assign(index, val);
         return val;
     }
 
-    // processes args and checks for errors before passing it to the LoxFunction object,
-    // which handles the actual call.
     @Override
     public Object visitCallExpr(Expr.Call expr) {
+        // if Expr.Variable, get associated val
+        // if Expr.Array, get LoxArray obj ref
+        // if Expr.Function, get LoxFunction obj ref
         Object callee = evaluate(expr.callee);
+        if (!(callee instanceof LoxCallable object))
+            throw new RuntimeError(expr.error, "Object not callable.");
+
         List<Object> args = new ArrayList<>();
-        for (Expr argument: expr.arguments)
+        // if LoxArray, args is a list with just 1 entry for the index
+        for (Expr argument : expr.arguments)
             args.add(evaluate(argument));
-
-        if (!(callee instanceof LoxCallable))
-            throw new RuntimeError(expr.paren,"Object not callable.");
-        LoxCallable function = (LoxCallable)callee;
-        if (args.size() != function.arity())
-            throw new RuntimeError(expr.paren,"Expected "+function.arity()+" arguments but got "+args.size()+".");
-        return function.call(this, args);
-    }
-
-    @Override
-    public Object visitArrayExpr(Expr.Array expr) {
-        // expr.callee is type Expr.Variable
-        // eval gets the LoxArray associated with var name
-        Object callee = evaluate(expr.callee);
-        if (!(callee instanceof LoxCallable))
-            throw new RuntimeError(expr.bracket,"Object not indexable.");
-        LoxArray array = (LoxArray)callee;
-        // index checks happen inside LoxArray
-        Object index = evaluate(expr.index);
-        // future proofing for multi-dim arrays
-        List<Object> indices = new ArrayList<>();
-        indices.add(index);
-        return array.call(this, indices);
+        if (args.size() != object.arity())
+            throw new RuntimeError(expr.error, "Expected " + object.arity() +
+                                    " arguments but got " + args.size() + ".");
+        return object.call(this, args);
     }
 
     @Override
@@ -311,6 +303,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case BANG -> !isTruthy(right);
             default -> null;
         };
+    }
+
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        Object caller = evaluate(expr.caller);
+        if (caller instanceof LoxArray)
+            return ((LoxArray)caller).get(expr.property);
+        throw new RuntimeError(expr.property,"Only arrays have properties.");
     }
 
     @Override

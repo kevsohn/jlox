@@ -5,15 +5,15 @@ import java.util.List;
 abstract class Expr {
     interface Visitor<R> {
         R visitAssignExpr(Expr.Assign expr);
-        R visitAssignArrayExpr(Expr.AssignArray expr);
+        R visitAssignCallerExpr(Expr.AssignCaller expr);
         R visitLogicalExpr(Expr.Logical expr);
         R visitBinaryExpr(Expr.Binary expr);
         R visitUnaryExpr(Expr.Unary expr);
         R visitCallExpr(Expr.Call expr);
+        R visitGetExpr(Expr.Get expr);
         R visitGroupExpr(Expr.Group expr);
         R visitLiteralExpr(Expr.Literal expr);
         R visitVariableExpr(Expr.Variable expr);
-        R visitArrayExpr(Expr.Array expr);
     }
 
     abstract <R> R accept(Expr.Visitor<R> v);
@@ -33,22 +33,22 @@ abstract class Expr {
         }
     }
 
-    static class AssignArray extends Expr {
+    static class AssignCaller extends Expr {
         final Expr callee;
-        final Expr index;
-        final Token bracket;
+        final List<Expr> arguments;
+        final Token error;
         final Expr value;
 
-        AssignArray(Expr callee, Expr index, Token bracket, Expr value) {
+        AssignCaller(Expr callee, List<Expr> arguments, Token error, Expr value) {
             this.callee = callee;
-            this.index = index;
-            this.bracket = bracket;
+            this.arguments = arguments;
+            this.error = error;
             this.value = value;
         }
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
-            return v.visitAssignArrayExpr(this);
+            return v.visitAssignCallerExpr(this);
         }
     }
 
@@ -104,17 +104,32 @@ abstract class Expr {
     static class Call extends Expr {
         final Expr callee;
         final List<Expr> arguments;
-        final Token paren;
+        final Token error;
 
-        Call(Expr callee, List<Expr> arguments, Token paren) {
+        Call(Expr callee, List<Expr> arguments, Token error) {
             this.callee = callee;
             this.arguments = arguments;
-            this.paren = paren;
+            this.error = error;
         }
 
         @Override
         <R> R accept(Expr.Visitor<R> v) {
             return v.visitCallExpr(this);
+        }
+    }
+
+    static class Get extends Expr {
+        final Expr caller;
+        final Token property;
+
+        Get(Expr caller, Token property) {
+            this.caller = caller;
+            this.property = property;
+        }
+
+        @Override
+        <R> R accept(Expr.Visitor<R> v) {
+            return v.visitGetExpr(this);
         }
     }
 
@@ -154,23 +169,6 @@ abstract class Expr {
         @Override
         <R> R accept(Expr.Visitor<R> v) {
             return v.visitVariableExpr(this);
-        }
-    }
-
-    static class Array extends Expr {
-        final Expr callee;
-        final Expr index;
-        final Token bracket;
-
-        Array(Expr callee, Expr index, Token bracket) {
-            this.callee = callee;
-            this.index = index;
-            this.bracket = bracket;
-        }
-
-        @Override
-        <R> R accept(Expr.Visitor<R> v) {
-            return v.visitArrayExpr(this);
         }
     }
 

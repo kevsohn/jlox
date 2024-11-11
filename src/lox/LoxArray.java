@@ -4,8 +4,9 @@ import java.util.List;
 
 class LoxArray implements LoxCallable {
     private final Stmt.Array declaration;
-    private final Object[] arr;
+    private Object[] arr;
     private final int length;
+    // could add Object Type later if wanted
     private enum Type {
         NONE, DOUBLE, STRING, BOOLEAN
     }
@@ -14,79 +15,76 @@ class LoxArray implements LoxCallable {
     LoxArray(Stmt.Array declaration, int length, List<Object> initElements) {
         this.declaration = declaration;
         this.length = length;
-        arr = new Object[length];
         // if initializer is empty, all elems == nil
         // then, first assignment value sets array type.
         if (initElements != null) {
-            for (int i=0; i<this.length; i++) {
-                Object value = initElements.get(i);
-                Type type = getType(value);
-                // checks if Double, String, or Boolean and NOT null
-                isValidType(type);
-                arr[i] = value;
-            }
             if (initElements.size() != length)
-                throw new RuntimeError(this.declaration.name, "Expected "+this.length+" element(s)" +
-                        " but got "+initElements.size()+".");
-            // fails if any 1 value is of diff type
-            // can't be Type.NONE here
-            this.type = checkArrayType();
+                throw new RuntimeError(declaration.name,"Expected "+length+" element(s)"+
+                                        " but got "+initElements.size()+".");
+            // throws error if type == NONE or if not all same type
+            this.type = determineArrayType(initElements);
+            // arr never null here
+            this.arr = setArrayType();
         }
+        else
+            this.arr = new Object[length];
     }
 
-    public int length() {
-        return length;
-    }
-
+    // array arg is just an index
     @Override
     public int arity() {
-        return length;
+        return 1;
     }
 
     @Override
-    public Object call(Interpreter interpreter, List<Object> indices) {
-        int ind = checkIndex(indices.get(0));
+    public Object call(Interpreter interpreter, List<Object> index) {
+        int ind = checkIndex(index.get(0));
         return arr[ind];
     }
 
-    public void assign(Interpreter interpreter, Object index, Object value) {
-        int ind = checkIndex(index);
+    public void assign(List<Object> index, Object value) {
+        int ind = checkIndex(index.get(0));
         // now valid assignment target
         Type type = getType(value);
-        // since Type.NONE covers more than just "nil"
+        // Type.NONE cur represents any Object not literal
         if (type == Type.NONE)
-            throw new RuntimeError(declaration.name, "Invalid assignment value for array.");
+            throw new RuntimeError(declaration.name, "Type unsupported for array assignment.");
         // only true if initializer was null in constructor
         if (this.type == Type.NONE) {
             this.type = type;
-            // replaces all nulls w/ default type val
-            initializeArrayType(type);
+            arr = setArrayType();
         }
         if (type != this.type)
             throw new RuntimeError(declaration.name, "Array is of type "+this.type.toString()+".");
+        //System.out.println(value.getClass());
         arr[ind] = value;
-        //checkType(); // dont need?
     }
 
-    private void initializeArrayType(Type type) {
-        Object init;
-        if (type == Type.STRING)
-            init = "";
+    public Object get(Token name) {
+        // can't return integer cuz Lox only works with Doubles!
+        if (name.lexeme.equals("len"))
+            return (double)length;
+        throw new RuntimeError(name, "No property named "+name.lexeme+".");
+    }
+
+    private Object[] setArrayType() {
+        if (type == Type.DOUBLE)
+            return new Double[this.length];
+        else if (type == Type.STRING)
+            return new String[this.length];
         else if (type == Type.BOOLEAN)
-            init = false;
-        // if Type.NONE, default to double
-        else
-            init = 0.;
-        for (int i=0; i<this.length; i++) {
-            arr[i] = init;
-        }
+            return new Boolean[this.length];
+        return new Object[this.length];
+        //return null;
     }
 
-    private Type checkArrayType() {
-        Type type = getType(arr[0]);
-        for (int i=1; i<length; i++) {
-            if (type != getType(arr[i]))
-                throw new RuntimeError(declaration.name, "Elements must all be of the same type.");
+    private Type determineArrayType(List<Object> elements) {
+        for (int i=0; i<length-1; i++) {
+            Type curType = getType(elements.get(i));
+            if (curType == Type.NONE)
+                throw new RuntimeError(this.declaration.name, "Elements must be literals.");
+            if (curType != getType(arr[i+1]))
+                throw new RuntimeError(declaration.name, "Elements must be of the same type.");
         }
         return type;
     }
@@ -99,11 +97,6 @@ class LoxArray implements LoxCallable {
         else if (value instanceof Boolean)
             return Type.BOOLEAN;
         return Type.NONE;
-    }
-
-    private void isValidType(Type type) {
-        if (type == Type.NONE)
-            throw new RuntimeError(declaration.name, "Array elements must be literals.");
     }
 
     private int checkIndex(Object index) {

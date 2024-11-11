@@ -1,6 +1,5 @@
 package lox;
 
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +34,7 @@ import static lox.TokenType.*;
 // factor -> exponent (( '*' | '/' | '%' ) exponent)*
 // exponent -> unary (( '*' | '/' | '%' ) unary)*
 // unary -> (( '!' | '-' ) unary) | primary
-// call -> array ("(" arguments? ")")*
+// call -> array ("(" arguments? ")" | "." IDENTIFIER)*
 // arrayCall -> primary "[" expression "]"
 // primary -> IDENTIFIER | '(' expr ')' | NUMBER | STRING | 'true' | 'false' | 'nil'
 public class Parser {
@@ -230,7 +229,9 @@ public class Parser {
     }
 
     private Stmt printStmt() {
-        Expr expr = expression();
+        Expr expr = null;
+        if (!check(SEMICOLON))
+            expr = expression();
         consume(SEMICOLON, "Missing ';' after print.");
         return new Stmt.Print(expr);
     }
@@ -245,6 +246,8 @@ public class Parser {
         return assignment();
     }
 
+    // arrays are the only Expr.Call that can be
+    // assigned to w/o using a getter
     private Expr assignment() {
         // right associative
         Expr expr = or();
@@ -252,9 +255,11 @@ public class Parser {
             Token op = prev();
             if (expr instanceof Expr.Variable)
                 return assignVariable((Expr.Variable)expr, op);
-            else if (expr instanceof Expr.Array)
-                return assignArray((Expr.Array)expr, op);
-            throw error(op, "Invalid assignment target");
+            else if (expr instanceof Expr.Call)
+                return assignCallable((Expr.Call)expr, op);
+            //else if (expr instanceof Expr.Get)
+            //    return new Expr.Set();
+            throw error(op, "Invalid assignment target.");
         }
         return expr;
     }
@@ -276,6 +281,29 @@ public class Parser {
         return new Expr.Assign(var.name, new Expr.Binary(var, operator, val));
     }
 
+    // mainly used for assigning to array but future proofed.
+    // think "[]" and "()" followed by "=" as a sep grammar to
+    // the brackets/parentheses by themselves, which is just a call.
+    // In BNF notation:
+    // assignCallable -> caller "="
+    // caller -> callee ("(args?)" | "[ind]")
+    // callee -> IDENTIFIER | caller
+    private Expr assignCallable(Expr.Call caller, Token operator) {
+        Expr val;
+        if (operator.type == EQ) {
+            // recursion so "a = b = 1;" works in a right associative way
+            // this now allows "a = b[0] = c = 1;"
+            val = assignment();
+            return new Expr.AssignCaller(caller.callee, caller.arguments, caller.error, val);
+        }
+        else if (operator.type == PLUS_EQ || operator.type == MINUS_EQ)
+            val = or();
+        else
+            val = new Expr.Literal(Double.valueOf(1.));
+        return new Expr.AssignCaller(caller.callee, caller.arguments, caller.error,
+                                        new Expr.Binary(caller.callee, operator, val));
+    }
+/*
     // pass all the params of Expr.Array instead of passing Expr.Array itself b/c
     // then evaluate(expr) in the Interpreter will return the LoxArray object
     // through evoking the visitor of Expr.Variable rather than
@@ -294,7 +322,7 @@ public class Parser {
             val = new Expr.Literal(Double.valueOf(1.));
         return new Expr.AssignArray(arr.callee, arr.index, arr.bracket, new Expr.Binary(arr.callee, operator, val));
     }
-
+*/
     private Expr or() {
         Expr left = and();
         // use while + no recursion for left associative
@@ -390,18 +418,23 @@ public class Parser {
     }
 
     private Expr call() {
-        Expr expr = array();
-        // can have nested function and/or field/method calls.
+        Expr expr = primary();
+        // can have nested function, array, and field/method calls.
         // if not callable, caught at runtime.
+        // allows exprs like "a[0]()" if a[0] holds something callable.
         while (true) {
             if (match(L_PAREN))
                 expr = finishCall(expr);
-            //else if (match(DOT))
-
+            else if (match(DOT)) {
+                Token name = consume(IDENTIFIER, "Expect property name.");
+                expr = new Expr.Get(expr, name);
+            }
+            // allows multi-dim arrays even if not supported
+            else if (match(L_BRACKET))
+                expr = finishArrayCall(expr);
             else
                 break;
         }
-
         return expr;
     }
 
@@ -420,16 +453,11 @@ public class Parser {
         return new Expr.Call(expr, args, paren);
     }
 
-    private Expr array() {
-        Expr expr = primary();
-        if (match(L_BRACKET)) {
-            if (!(expr instanceof Expr.Variable))
-                throw error(prev(), "Expression not indexable.");
-            Expr index = expression();
-            Token bracket = consume(R_BRACKET, "Expect ']' after array index.");
-            return new Expr.Array(expr, index, bracket);
-        }
-        return expr;
+    private Expr finishArrayCall(Expr expr) {
+        Expr index = expression();
+        Token bracket = consume(R_BRACKET, "Expect ']' after array index.");
+        return new Expr.Call(expr, Arrays.asList(index), bracket);
+        //return new Expr.Array(expr, index, bracket);
     }
 
     private Expr primary() {
